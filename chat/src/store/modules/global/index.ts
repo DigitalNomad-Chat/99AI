@@ -70,6 +70,27 @@ export const useGlobalStore = defineStore('global-store', {
     workflowContent: [],
     markdownContent: '',
     isMarkdownPreviewerVisible: false,
+
+    // 新增：预览器配置
+    previewerConfig: {
+      sandboxMode: 'strict',
+      enableSanitizer: true,
+      theme: 'auto',
+    },
+
+    // 新增：预览历史记录
+    previewHistory: [],
+
+    // 新增：预览显示模式
+    previewDisplayMode: 'sidebar',
+
+    // 新增：侧边栏配置
+    sidebarConfig: {
+      width: 50,
+      position: 'right',
+      resizable: false,
+      animation: true,
+    },
   }),
 
   actions: {
@@ -110,7 +131,7 @@ export const useGlobalStore = defineStore('global-store', {
 
     updateHtmlContent(
       htmlContent: string,
-      contentType: 'html' | 'mermaid' | 'markmap' | '' = 'html'
+      contentType: 'html' | 'react' | 'vue' | 'mermaid' | 'markmap' | '' = 'html'
     ) {
       this.htmlContent = htmlContent
       this.contentType = contentType
@@ -282,6 +303,47 @@ export const useGlobalStore = defineStore('global-store', {
       if (!visible) {
         this.markdownContent = ''
       }
+    },
+
+    // 新增：更新预览器配置
+    updatePreviewerConfig(config: Partial<GlobalState['previewerConfig']>) {
+      this.previewerConfig = { ...this.previewerConfig, ...config }
+    },
+
+    // 新增：添加预览历史记录
+    addPreviewHistory(content: string, contentType: string) {
+      const historyItem = {
+        id: `preview-${Date.now()}`,
+        content,
+        contentType,
+        timestamp: Date.now(),
+      }
+      this.previewHistory.push(historyItem)
+
+      // 限制历史记录数量为 20
+      if (this.previewHistory.length > 20) {
+        this.previewHistory.shift()
+      }
+    },
+
+    // 新增：清空预览历史记录
+    clearPreviewHistory() {
+      this.previewHistory = []
+    },
+
+    // 新增：切换预览显示模式
+    togglePreviewMode() {
+      this.previewDisplayMode = this.previewDisplayMode === 'sidebar' ? 'modal' : 'sidebar'
+    },
+
+    // 新增：设置预览显示模式
+    setPreviewMode(mode: 'sidebar' | 'modal') {
+      this.previewDisplayMode = mode
+    },
+
+    // 新增：更新侧边栏配置
+    updateSidebarConfig(config: Partial<GlobalState['sidebarConfig']>) {
+      this.sidebarConfig = { ...this.sidebarConfig, ...config }
     },
   },
 })

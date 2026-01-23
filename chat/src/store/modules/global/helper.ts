@@ -49,7 +49,7 @@ export interface GlobalState {
   iframeUrl: string
   clipboardText: string
   htmlContent: string
-  contentType: 'html' | 'mermaid' | 'markmap' | ''
+  contentType: 'html' | 'react' | 'vue' | 'mermaid' | 'markmap' | ''
   textContent: string
   full_json: string
   externalLinkDialog: boolean
@@ -67,6 +67,32 @@ export interface GlobalState {
   mjImageData: any
   workflowContent: string[]
   markdownContent: string
+
+  // 新增：预览器配置
+  previewerConfig: {
+    sandboxMode: 'basic' | 'strict'
+    enableSanitizer: boolean
+    theme: 'light' | 'dark' | 'auto'
+  }
+
+  // 新增：预览历史记录
+  previewHistory: Array<{
+    id: string
+    content: string
+    contentType: string
+    timestamp: number
+  }>
+
+  // 新增：预览显示模式
+  previewDisplayMode: 'sidebar' | 'modal'
+
+  // 新增：侧边栏配置
+  sidebarConfig: {
+    width: number // 侧边栏宽度 (30-70)
+    position: 'right' // 固定右侧
+    resizable: boolean // 是否可调整大小
+    animation: boolean // 是否启用动画
+  }
 }
 
 export function defaultSetting(): UserState {

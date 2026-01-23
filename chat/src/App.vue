@@ -3,6 +3,7 @@ import favicon from '@/assets/favicon.ico'
 
 import Watermark from '@/components/common/Watermark/index.vue'
 import HtmlDialog from '@/components/HtmlDialog.vue'
+import HtmlSidebar from '@/components/HtmlSidebar.vue'
 import { initWechatLogin } from '@/services/wechatLogin' // 导入微信登录相关功能
 import { useAuthStore, useGlobalStoreWithOut } from '@/store'
 import { DIALOG_TABS } from '@/store/modules/global'
@@ -192,8 +193,19 @@ onMounted(async () => {
   <!-- 主要内容使用router-view -->
   <router-view />
 
-  <!-- 共享内容对话框 -->
-  <HtmlDialog :visible="useGlobalStore.htmlDialog" :html="sharedHtml" />
+  <!-- HTML 预览组件 - 根据模式显示侧边栏或模态框 -->
+  <HtmlSidebar
+    v-if="useGlobalStore.showHtmlPreviewer && useGlobalStore.previewDisplayMode === 'sidebar'"
+  />
+  <HtmlDialog
+    v-if="
+      useGlobalStore.htmlDialog ||
+      (useGlobalStore.showHtmlPreviewer && useGlobalStore.previewDisplayMode === 'modal')
+    "
+    :visible="useGlobalStore.htmlDialog || useGlobalStore.showHtmlPreviewer"
+    :html="useGlobalStore.showHtmlPreviewer ? useGlobalStore.htmlContent : sharedHtml"
+    :contentType="useGlobalStore.showHtmlPreviewer ? useGlobalStore.contentType : 'html'"
+  />
 
   <!-- 全局图片预览器 -->
   <GlobalImageViewer />

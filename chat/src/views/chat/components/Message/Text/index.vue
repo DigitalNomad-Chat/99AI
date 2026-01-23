@@ -4,6 +4,13 @@ import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { t } from '@/locales'
 import { useAuthStore, useGlobalStoreWithOut } from '@/store'
 import { copyText } from '@/utils/format'
+import {
+  isHtmlLanguage,
+  isReactLanguage,
+  isVueLanguage,
+  isPreviewableLanguage,
+  detectCodeType,
+} from '@/utils/htmlDetector'
 import { message } from '@/utils/message'
 import {
   ArrowRight,
@@ -38,6 +45,37 @@ hljs.registerLanguage('mermaid', () => ({
   keywords: {
     keyword: 'graph flowchart sequenceDiagram classDiagram stateDiagram gitGraph pie gantt',
     built_in: 'TD TB BT RL LR',
+  },
+  case_insensitive: true,
+}))
+
+// 注册 Vue 语言到 highlight.js（支持预览功能）
+hljs.registerLanguage('vue', () => ({
+  name: 'vue',
+  contains: [],
+  keywords: {
+    keyword:
+      'template script style setup ref computed onMounted onUnmounted watch defineProps defineEmits defineComponent',
+  },
+  case_insensitive: true,
+}))
+
+// 注册 JSX/TSX 语言到 highlight.js（支持预览功能）
+hljs.registerLanguage('jsx', () => ({
+  name: 'jsx',
+  contains: [],
+  keywords: {
+    keyword: 'import export from const let var function return if else for while class extends',
+  },
+  case_insensitive: true,
+}))
+
+hljs.registerLanguage('tsx', () => ({
+  name: 'tsx',
+  contains: [],
+  keywords: {
+    keyword:
+      'import export from const let var function return if else for while class extends interface type',
   },
   case_insensitive: true,
 }))
@@ -289,7 +327,6 @@ const copyTimeoutsMap = new Map()
 
 // 复制代码的处理函数
 function handleCodeCopy(blockId: string, element: HTMLElement) {
-  console.log('复制开始，blockId:', blockId)
   // 如果已经是"已复制"状态，则不重复处理
   const copiedText = element.querySelector('.copied-text')
   if (copiedText && getComputedStyle(copiedText).display !== 'none') return
@@ -312,7 +349,6 @@ function handleCodeCopy(blockId: string, element: HTMLElement) {
       navigator.clipboard
         .writeText(codeElement.textContent)
         .then(() => {
-          console.log('使用navigator.clipboard成功复制')
           // 成功复制后更新UI
           updateCopyButtonState(element, blockId)
         })
@@ -341,7 +377,6 @@ function fallbackCopy(text: string | null, element: HTMLElement, blockId: string
 
   try {
     copyText({ text: text, origin: true })
-    console.log('使用fallback方法复制成功')
     updateCopyButtonState(element, blockId)
   } catch (error) {
     console.error('fallback复制失败:', error)
@@ -379,7 +414,6 @@ function updateCopyButtonState(element: HTMLElement, blockId: string) {
 
   // 设置新的定时器，3秒后恢复原始状态
   const timeoutId = setTimeout(() => {
-    console.log('恢复原始按钮内容')
     if (element) {
       const copyIcon = element.querySelector('.copy-icon')
       const checkIcon = element.querySelector('.check-icon')
@@ -514,6 +548,46 @@ const reasoningText = computed<string>(() => {
 function highlightBlock(str: string, lang?: string) {
   const blockId = `code-block-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 
+  // 如果没有明确的语言标识，尝试从内容中检测
+  let detectedLang = lang
+  if (!detectedLang || !isPreviewableLanguage(detectedLang)) {
+    // 使用内容检测
+    const codeType = detectCodeType(str, detectedLang)
+    if (codeType !== 'unknown') {
+      detectedLang = codeType
+    }
+  }
+
+  // 判断是否为可预览的语言（HTML/React/Vue）
+  const showPreviewBtn = isPreviewableLanguage(detectedLang)
+
+  // 根据语言类型确定预览按钮样式和文本
+  let previewButtonText = '预览'
+  let previewButtonClass = 'btn-preview'
+  let previewButtonType = 'html'
+
+  if (isReactLanguage(detectedLang)) {
+    previewButtonText = 'React'
+    previewButtonClass = 'btn-preview btn-preview-react'
+    previewButtonType = 'react'
+  } else if (isVueLanguage(detectedLang)) {
+    previewButtonText = 'Vue'
+    previewButtonClass = 'btn-preview btn-preview-vue'
+    previewButtonType = 'vue'
+  }
+
+  const previewButton = showPreviewBtn
+    ? `
+    <button class="h-7 gap-1 btn-pill ${previewButtonClass}" data-block-id="${blockId}" data-preview-type="${previewButtonType}" title="预览${previewButtonText}">
+      <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="preview-icon text-current">
+        <path d="M8 12L8 36L40 36L40 12L8 12Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M8 12L24 24L40 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="preview-text">${previewButtonText}</span>
+    </button>
+  `
+    : ''
+
   // 直接返回带样式的HTML
   return `<pre
     class="max-w-full border border-gray-200 bg-[#AFB8C133] dark:border-gray-700 dark:bg-gray-750 transition-colors"
@@ -522,6 +596,7 @@ function highlightBlock(str: string, lang?: string) {
   ><div class="code-block-header sticky w-full h-10 flex justify-between items-center px-3 border-b border-gray-100 dark:border-gray-700 z-10">
     <span class="text-gray-600 dark:text-gray-400 text-sm font-medium flex items-center">${lang || 'text'}</span>
     <div class="flex gap-2">
+      ${previewButton}
       <button class="h-7 gap-1 btn-pill btn-copy" data-block-id="${blockId}">
         <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="copy-icon text-current"><path d="M13 12.4316V7.8125C13 6.2592 14.2592 5 15.8125 5H40.1875C41.7408 5 43 6.2592 43 7.8125V32.1875C43 33.7408 41.7408 35 40.1875 35H35.5163" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M32.1875 13H7.8125C6.2592 13 5 14.2592 5 15.8125V40.1875C5 41.7408 6.2592 43 7.8125 43H32.1875C33.7408 43 35 41.7408 35 40.1875V15.8125C35 14.2592 33.7408 13 32.1875 13Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>
         <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="check-icon text-current hidden"><path d="M10 24L20 34L40 14" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -693,7 +768,6 @@ onMounted(() => {
 
   // 添加复制功能
   const setupCodeCopy = () => {
-    console.log('设置代码复制功能')
     // 选择包含btn-copy类的按钮
     const copyButtons = document.querySelectorAll('.btn-copy[data-block-id]')
     copyButtons.forEach(button => {
@@ -709,7 +783,6 @@ onMounted(() => {
       button.addEventListener('click', event => {
         event.stopPropagation()
         event.preventDefault()
-        console.log('复制按钮被点击, blockId:', blockId)
         handleCodeCopy(blockId, button as HTMLElement)
       })
 
@@ -775,12 +848,25 @@ onMounted(() => {
         if (codeBlock) {
           const codeElement = codeBlock.querySelector('code')
           if (codeElement && codeElement.textContent) {
-            // 检查是否是Mermaid图表
-            const isMermaid = previewButton.classList.contains('preview-mermaid')
+            // 检查预览类型：Mermaid、React、Vue 或默认 HTML
+            let contentType: 'html' | 'react' | 'vue' | 'mermaid' | 'markmap' = 'html'
+
+            if (previewButton.classList.contains('preview-mermaid')) {
+              contentType = 'mermaid'
+            } else if (previewButton.classList.contains('btn-preview-react')) {
+              contentType = 'react'
+            } else if (previewButton.classList.contains('btn-preview-vue')) {
+              contentType = 'vue'
+            } else {
+              // 备用检测：根据代码内容自动检测类型
+              const code = codeElement.textContent || ''
+              contentType = detectCodeType(code)
+            }
+
             // 更新当前点击的内容到全局存储，标记类型
             globalStore.updateHtmlContent(
               codeElement.textContent || '',
-              isMermaid ? 'mermaid' : 'html'
+              contentType
             )
             // 打开预览器，由预览器自动收集所有代码块
             globalStore.updateHtmlPreviewer(true)
@@ -788,6 +874,77 @@ onMounted(() => {
         }
       }
     }
+  }
+
+  /**
+   * 检测代码类型
+   */
+  function detectCodeType(code: string): 'html' | 'react' | 'vue' | 'mermaid' | 'markmap' {
+    const trimmed = code.trim()
+
+    console.log('[detectCodeType] Input code:', trimmed.substring(0, 100))
+
+    // Mermaid 检测 - 更宽松的正则表达式
+    // 首先检查第一行
+    const lines = trimmed.split('\n')
+    const firstLine = lines[0]?.trim().toLowerCase()
+
+    console.log('[detectCodeType] First line:', firstLine)
+
+    // 检查第一行是否为 mermaid 关键字
+    if (firstLine?.startsWith('graph ') ||
+        firstLine?.startsWith('flowchart ') ||
+        firstLine?.startsWith('sequencediagram') ||
+        firstLine?.startsWith('classdiagram') ||
+        firstLine?.startsWith('statediagram') ||
+        firstLine?.startsWith('gantt') ||
+        firstLine?.startsWith('pie ') ||
+        firstLine?.startsWith('gitgraph') ||
+        firstLine?.startsWith('mindmap') ||
+        firstLine?.startsWith('erdiagram')) {
+      console.log('[detectCodeType] Detected as mermaid (first line match)')
+      return 'mermaid'
+    }
+
+    // 使用正则表达式检测（备用）
+    const mermaidPatterns = [
+      /graph\s+(TD|LR|BT|RL)/,  // 移除了 \n 要求
+      /sequenceDiagram/i,
+      /classDiagram/i,
+      /stateDiagram/i,
+      /gantt/i,
+      /pie\s/i,
+      /gitGraph/i,
+      /mindmap/i,
+      /erDiagram/i,
+      /flowchart\s+(TD|LR)/,
+    ]
+    if (mermaidPatterns.some(p => p.test(trimmed))) {
+      console.log('[detectCodeType] Detected as mermaid (regex match)')
+      return 'mermaid'
+    }
+
+    // React 检测
+    if (/import.*from\s+['"](react|react-dom)['"]/.test(trimmed) ||
+        /React\.(createElement|useState|useEffect)/.test(trimmed) ||
+        /export\s+(default\s+)?(function|const|class).*React/.test(trimmed)) {
+      console.log('[detectCodeType] Detected as react')
+      return 'react'
+    }
+
+    // Vue 检测
+    if (/<template[^>]*>/.test(trimmed) && /<script[^>]*>/.test(trimmed)) {
+      console.log('[detectCodeType] Detected as vue (template+script)')
+      return 'vue'
+    }
+    if (/import.*from\s+['"]vue['"]/.test(trimmed)) {
+      console.log('[detectCodeType] Detected as vue (import)')
+      return 'vue'
+    }
+
+    console.log('[detectCodeType] Defaulting to html')
+    // 默认为 HTML
+    return 'html'
   }
 
   document.addEventListener('click', handlePreviewClick)
@@ -854,23 +1011,39 @@ onMounted(() => {
 
   // 监听 code button 点击事件
   setTimeout(() => {
-    // 预览按钮
-    const htmlPreviewBtns = document.querySelectorAll(
-      '.btn-preview:not(.preview-mermaid):not(.preview-markmap)'
+    // 预览按钮（包括 HTML/React/Vue）- 使用属性选择器匹配所有 btn-preview-* 类
+    const allPreviewBtns = document.querySelectorAll(
+      '[class*="btn-preview"]:not(.preview-mermaid):not(.preview-markmap)'
     )
     const mermaidPreviewBtns = document.querySelectorAll('.preview-mermaid')
     const markmapPreviewBtns = document.querySelectorAll('.preview-markmap')
     const copyBtns = document.querySelectorAll('.btn-copy')
 
-    // HTML预览按钮点击处理
-    htmlPreviewBtns.forEach(btn => {
+    // HTML/React/Vue/Mermaid 预览按钮点击处理
+    allPreviewBtns.forEach(btn => {
       btn.addEventListener('click', (e: Event) => {
-        // 获取代码块ID
-        const blockId = (e.currentTarget as HTMLElement).dataset.blockId || ''
+        const currentTarget = e.currentTarget as HTMLElement
+        const blockId = currentTarget.dataset.blockId || ''
+        const previewType = currentTarget.dataset.previewType || 'html'
         const codeBlock = document.getElementById(blockId)
+
         if (codeBlock && codeBlock.querySelector('code')) {
           const code = codeBlock.querySelector('code')?.textContent || ''
-          globalStore.updateHtmlContent(code, 'html')
+
+          // 根据预览类型设置不同的内容类型
+          let contentType: 'html' | 'react' | 'vue' | 'mermaid' = 'html'
+          if (previewType === 'react') {
+            contentType = 'react'
+          } else if (previewType === 'vue') {
+            contentType = 'vue'
+          } else if (previewType === 'mermaid') {
+            contentType = 'mermaid'
+          } else if (previewType === 'html') {
+            // 使用代码内容自动检测类型
+            contentType = detectCodeType(code)
+          }
+
+          globalStore.updateHtmlContent(code, contentType)
           globalStore.updateHtmlPreviewer(true)
         }
       })

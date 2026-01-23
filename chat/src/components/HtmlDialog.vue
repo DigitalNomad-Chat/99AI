@@ -4,6 +4,10 @@ import type { ResData } from '@/api/types'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useGlobalStoreWithOut } from '@/store'
 import { message } from '@/utils/message'
+import { sanitizeHtml } from '@/utils/sanitizer'
+import { createReactPreview } from '@/utils/compiler/reactRuntime'
+import { createVuePreview } from '@/utils/compiler/vueRuntime'
+import { createMermaidPreview } from '@/utils/compiler/mermaidRuntime'
 import { html } from '@codemirror/lang-html'
 import { EditorState } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -15,6 +19,7 @@ interface Props {
   visible: boolean
   html?: string
   editable?: boolean
+  contentType?: 'html' | 'react' | 'vue' | 'mermaid' | 'markmap' | ''
 }
 
 const props = defineProps<Props>()
@@ -33,8 +38,8 @@ let editor: EditorView | null = null
 // 当props.html变化时更新本地编辑文本和编辑器
 watchEffect(() => {
   if (props.visible) {
-    // Update local ref first
-    if (props.html && props.html !== localEditableText.value) {
+    // Update local ref first - 移除 props.html 的存在性检查，允许空字符串
+    if (props.html !== undefined && props.html !== localEditableText.value) {
       localEditableText.value = props.html
     }
 
@@ -54,13 +59,42 @@ watchEffect(() => {
   }
 })
 
-// 使用 watchEffect 来更新预览，当 localEditableText 变化时
-watchEffect(() => {
-  if (props.visible) {
-    // 只在可见时更新预览
-    updatePreview()
+/**
+ * 生成预览 HTML
+ */
+const generatePreviewHtml = (): string => {
+  const content = localEditableText.value
+  const contentType = props.contentType || 'html'
+
+  if (!content) {
+    return '<!DOCTYPE html><html><body><div style="padding:20px;color:#999">No content</div></body></html>'
   }
-})
+
+  switch (contentType) {
+    case 'react':
+      return createReactPreview(content)
+
+    case 'vue':
+      return createVuePreview(content)
+
+    case 'mermaid':
+      return createMermaidPreview(content)
+
+    case 'html':
+    case 'markmap':
+    default:
+      // HTML 和其他类型直接使用原始内容
+      return content
+  }
+}
+
+// 预览更新逻辑 (必须在 watchEffect 之前定义)
+const updatePreview = () => {
+  if (htmlPreviewRef.value) {
+    const previewHtml = generatePreviewHtml()
+    htmlPreviewRef.value.srcdoc = previewHtml
+  }
+}
 
 // 初始化编辑器
 const initializeEditor = () => {
@@ -93,27 +127,23 @@ const initializeEditor = () => {
   })
 }
 
-// 预览更新逻辑 (保持不变或根据需要调整)
-const updatePreview = () => {
-  if (htmlPreviewRef.value) {
-    // 更新 iframe 的 srcDoc 更为推荐，避免潜在的 XSS
-    htmlPreviewRef.value.srcdoc = localEditableText.value
-    /* 或者保持原来的方式，如果需要执行脚本等
-    const iframeDocument = htmlPreviewRef.value.contentDocument
-    if (iframeDocument) {
-      iframeDocument.open()
-      iframeDocument.write(localEditableText.value)
-      iframeDocument.close()
-    }
-    */
+// 使用 watchEffect 来更新预览，当 localEditableText 变化时
+watchEffect(() => {
+  if (props.visible) {
+    // 只在可见时更新预览
+    updatePreview()
   }
-}
+})
 
 function handleClose() {
   // 阻止事件冒泡和默认行为
   emit('update:visible', false)
   emit('update:html', localEditableText.value)
+  // 同时清除两个状态，确保无论通过哪种方式打开都能正确关闭
   globalStore.updateHtmlDialog(false)
+  globalStore.updateHtmlPreviewer(false)
+  // 重置模式为侧边栏，以便下次预览默认打开侧边栏
+  globalStore.setPreviewMode('sidebar')
 
   return false
 }
@@ -221,10 +251,9 @@ watch(
         <div v-if="isMobile" class="p-2 w-full h-1/2">
           <iframe
             ref="htmlPreviewRef"
-            :srcDoc="localEditableText"
             class="box-border w-full h-full border rounded-md"
             frameborder="0"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            sandbox="allow-scripts allow-forms allow-same-origin"
           ></iframe>
         </div>
 
@@ -266,10 +295,9 @@ watch(
         <div v-if="!isMobile" :class="[props.editable === false ? 'w-full' : 'w-3/4']" class="p-2">
           <iframe
             ref="htmlPreviewRef"
-            :srcDoc="localEditableText"
             class="box-border w-full h-full border rounded-md"
             frameborder="0"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            sandbox="allow-scripts allow-forms allow-same-origin"
           ></iframe>
         </div>
       </div>

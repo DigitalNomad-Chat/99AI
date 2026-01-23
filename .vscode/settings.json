@@ -106,5 +106,13 @@
     "./chat": ["./src/chat/tsconfig.json"],
     "./admin": ["./src/admin/tsconfig.json"],
     "./service": ["./src/service/tsconfig.json"]
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    ".yoyo": true
   }
 }
