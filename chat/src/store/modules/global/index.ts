@@ -88,9 +88,12 @@ export const useGlobalStore = defineStore('global-store', {
     sidebarConfig: {
       width: 50,
       position: 'right',
-      resizable: false,
+      resizable: true,  // 启用拖拽调整
       animation: true,
     },
+
+    // 新增：侧边栏可见状态（用于分屏布局）
+    sidebarVisible: false,
   }),
 
   actions: {
@@ -139,6 +142,8 @@ export const useGlobalStore = defineStore('global-store', {
 
     updateHtmlPreviewer(visible: boolean) {
       this.showHtmlPreviewer = visible
+      // 同步侧边栏可见状态（用于分屏布局）
+      this.sidebarVisible = visible && this.previewDisplayMode === 'sidebar'
     },
 
     updateTextEditor(visible: boolean) {

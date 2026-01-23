@@ -88,6 +88,14 @@ export function useHtmlPreview() {
    */
   const updateSidebarConfig = (config: Partial<typeof sidebarConfig.value>) => {
     globalStore.updateSidebarConfig(config)
+
+    // 同步更新 CSS 变量（用于分屏布局）
+    if (config.width !== undefined) {
+      const widthPercent = config.width
+      const sidebarWidthPx = (window.innerWidth * widthPercent) / 100
+      document.documentElement.style.setProperty('--sidebar-width', `${widthPercent}%`)
+      document.documentElement.style.setProperty('--sidebar-width-px', `${sidebarWidthPx}px`)
+    }
   }
 
   return {

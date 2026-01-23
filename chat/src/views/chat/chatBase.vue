@@ -24,6 +24,7 @@ import AppList from './components/AppList/index.vue'
 import AppTips from './components/AppTips/index.vue'
 import FooterComponent from './components/Footer/index.vue'
 import HeaderComponent from './components/Header/index.vue'
+import HtmlSidebar from '@/components/HtmlSidebar.vue'
 import Message from './components/Message/index.vue'
 import PresetHints from './components/PresetHints/index.vue'
 import WelcomeComponent from './components/Welcome/index.vue'
@@ -1282,10 +1283,13 @@ provide('tryParseJson', tryParseJson)
 
 <template>
   <Sider class="h-full" />
-  <div class="flex h-full w-full">
-    <!-- Main container flex -->
+
+  <!-- 统一的分屏布局容器 -->
+  <div class="split-screen-container">
+    <!-- 聊天区域 -->
     <div
-      class="relative overflow-hidden h-full w-full flex flex-col transition-all duration-300 ease-in-out transform"
+      class="chat-area relative overflow-hidden h-full w-full flex flex-col transition-all duration-300 ease-in-out transform"
+      :class="{ 'sidebar-open': useGlobalStore.sidebarVisible }"
     >
       <!-- Background Image Layer -->
       <div
@@ -1476,6 +1480,9 @@ provide('tryParseJson', tryParseJson)
       </template>
     </div>
 
+    <!-- HTML 预览侧边栏（仅在侧边栏模式时显示） -->
+    <HtmlSidebar v-if="useGlobalStore.showHtmlPreviewer && useGlobalStore.previewDisplayMode === 'sidebar'" />
+
     <!-- 通用应用配置弹窗 -->
     <transition name="modal-fade">
       <!-- Backdrop and Centering Container -->
@@ -1609,6 +1616,7 @@ provide('tryParseJson', tryParseJson)
       </div>
     </transition>
   </div>
+  <!-- 关闭统一分屏容器 -->
 </template>
 
 <style>
@@ -1673,5 +1681,41 @@ provide('tryParseJson', tryParseJson)
 .modal-fade-enter-from,
 .modal-fade-leave-to {
   opacity: 0;
+}
+
+/* ========== 分屏布局优化样式 ========== */
+
+/* 统一的分屏容器 - 使用 flex 布局 */
+.split-screen-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* 聊天区域 - flex: 1 自动伸缩 */
+.chat-area {
+  position: relative;
+  flex: 1;
+  min-width: 350px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 侧边栏打开时，添加视觉分隔线 */
+.chat-area.sidebar-open {
+  border-right: 1px solid rgb(229 231 235);
+}
+
+.dark .chat-area.sidebar-open {
+  border-right: 1px solid rgb(55 65 81);
+}
+
+/* 移动端：不使用分屏，聊天区域保持全宽 */
+@media (max-width: 768px) {
+  .chat-area.sidebar-open {
+    border-right: none;
+  }
 }
 </style>

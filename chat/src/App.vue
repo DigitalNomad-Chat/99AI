@@ -3,7 +3,7 @@ import favicon from '@/assets/favicon.ico'
 
 import Watermark from '@/components/common/Watermark/index.vue'
 import HtmlDialog from '@/components/HtmlDialog.vue'
-import HtmlSidebar from '@/components/HtmlSidebar.vue'
+// HtmlSidebar 现在在 chatBase.vue 中直接引用，不再在 App.vue 中全局引用
 import { initWechatLogin } from '@/services/wechatLogin' // 导入微信登录相关功能
 import { useAuthStore, useGlobalStoreWithOut } from '@/store'
 import { DIALOG_TABS } from '@/store/modules/global'
@@ -193,10 +193,7 @@ onMounted(async () => {
   <!-- 主要内容使用router-view -->
   <router-view />
 
-  <!-- HTML 预览组件 - 根据模式显示侧边栏或模态框 -->
-  <HtmlSidebar
-    v-if="useGlobalStore.showHtmlPreviewer && useGlobalStore.previewDisplayMode === 'sidebar'"
-  />
+  <!-- HTML 预览组件 - 仅模态框模式（侧边栏模式在 chatBase.vue 中处理） -->
   <HtmlDialog
     v-if="
       useGlobalStore.htmlDialog ||

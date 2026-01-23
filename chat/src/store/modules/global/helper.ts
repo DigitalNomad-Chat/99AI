@@ -93,6 +93,9 @@ export interface GlobalState {
     resizable: boolean // 是否可调整大小
     animation: boolean // 是否启用动画
   }
+
+  // 新增：侧边栏可见状态（用于分屏布局）
+  sidebarVisible: boolean
 }
 
 export function defaultSetting(): UserState {
