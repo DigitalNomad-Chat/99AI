@@ -373,7 +373,7 @@ defineExpose({ textRef })
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #6366f1;
+  background-color: #409eff;
   animation: dotBounce 1.4s infinite ease-in-out;
 }
 

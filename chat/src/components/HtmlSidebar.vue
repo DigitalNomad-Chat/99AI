@@ -307,31 +307,17 @@ onMounted(() => {
 
       <div class="flex items-center space-x-2">
         <!-- 导出按钮 -->
-        <button
-          v-if="!isMobile"
-          @click="openExportDrawer"
-          class="icon-btn"
-          title="导出"
-        >
+        <button v-if="!isMobile" @click="openExportDrawer" class="icon-btn" title="导出">
           <Download :size="16" class="text-gray-600 dark:text-gray-400" />
         </button>
 
         <!-- 切换到专注模式 -->
-        <button
-          v-if="!isMobile"
-          @click="switchToFocusMode"
-          class="icon-btn"
-          title="切换到专注模式"
-        >
+        <button v-if="!isMobile" @click="switchToFocusMode" class="icon-btn" title="切换到专注模式">
           <FullScreen :size="16" class="text-gray-600 dark:text-gray-400" />
         </button>
 
         <!-- 关闭按钮 -->
-        <button
-          @click="handleClose"
-          class="icon-btn"
-          title="关闭"
-        >
+        <button @click="handleClose" class="icon-btn" title="关闭">
           <Close :size="16" class="text-gray-600 dark:text-gray-400" />
         </button>
       </div>

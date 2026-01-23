@@ -3,7 +3,12 @@ import { ref, computed, watch } from 'vue'
 import { Download } from '@icon-park/vue-next'
 import type { Artifact } from '@/store/modules/artifact/helper'
 import type { ExportFormat } from '@/utils/compiler/exporter'
-import { exportArtifact, getRecommendedFilename, triggerDownload, type ExportConfig } from '@/utils/compiler/exporter'
+import {
+  exportArtifact,
+  getRecommendedFilename,
+  triggerDownload,
+  type ExportConfig,
+} from '@/utils/compiler/exporter'
 
 interface Props {
   visible: boolean
@@ -61,11 +66,15 @@ const recommendedFilename = computed(() => {
 })
 
 // 监听 artifact 变化，更新文件名
-watch(() => props.artifact, (artifact) => {
-  if (artifact && !filename.value) {
-    filename.value = recommendedFilename.value
-  }
-}, { immediate: true })
+watch(
+  () => props.artifact,
+  artifact => {
+    if (artifact && !filename.value) {
+      filename.value = recommendedFilename.value
+    }
+  },
+  { immediate: true }
+)
 
 /**
  * 执行导出
@@ -124,11 +133,7 @@ function handleFormatChange(format: ExportFormat) {
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div
-        v-if="props.visible"
-        class="fixed inset-0 bg-black/50 z-50"
-        @click="handleClose"
-      ></div>
+      <div v-if="props.visible" class="fixed inset-0 bg-black/50 z-50" @click="handleClose"></div>
     </transition>
 
     <!-- 抽屉 -->

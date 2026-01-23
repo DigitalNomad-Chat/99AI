@@ -1,0 +1,224 @@
+/* ============================================
+   99AI 设计系统 - 现代简约 + 科技感
+   蓝色系品牌色（参考 client_v1.5.2 项目）
+
+   更新日期：2026年1月23日
+   ============================================ */
+
+:root {
+  /* ===== 品牌色 - 蓝色渐变系 ===== */
+  /* 主色：#275bff（主品牌） → #409eff（辅助蓝） */
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #275bff; /* 主品牌色 - 来自 client 项目 */
+  --brand-600: #1d4ed8; /* 深品牌色 */
+  --brand-700: #1e40af;
+  --brand-800: #1e3a8a;
+  --brand-900: #1e3a8a;
+  --brand-950: #172554;
+
+  /* 辅助蓝色 */
+  --brand-secondary: #409eff; /* client 项目辅助蓝 */
+  --brand-secondary-light: #53a8ff;
+  --brand-secondary-dark: #337ecc;
+
+  /* 品牌渐变 */
+  --gradient-brand: linear-gradient(135deg, #275bff 0%, #409eff 100%);
+  --gradient-brand-subtle: linear-gradient(135deg, #409eff 0%, #275bff 100%);
+  --gradient-brand-dark: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+
+  /* ===== 功能色 ===== */
+  --success: #10b981;
+  --success-light: #34d399;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+  --danger: #ef4444;
+  --danger-light: #f87171;
+  --info: #3b82f6;
+  --info-light: #60a5fa;
+
+  /* ===== 中性色 - 精细层次 ===== */
+  /* 亮色模式 */
+  --gray-50: #fafafa; /* 页面背景 */
+  --gray-100: #f4f4f5; /* 次级背景 */
+  --gray-200: #e4e4e7; /* 边框/分割 */
+  --gray-300: #d4d4d8; /* 悬停边框 */
+  --gray-400: #a3a3a3; /* 占位文字 */
+  --gray-500: #737373; /* 次要文字 */
+  --gray-600: #525252; /* 正文 */
+  --gray-700: #3f3f46; /* 深色文字 */
+  --gray-800: #27272a; /* 标题 */
+  --gray-900: #18181b; /* 深黑背景 */
+
+  /* 特殊中性色 - 带微调 */
+  --surface-1: #fafafa; /* 主表面 */
+  --surface-2: #f4f4f5; /* 次表面 */
+  --surface-3: #e4e4e7; /* 悬停表面 */
+  --surface-4: #d4d4d8; /* 激活表面 */
+
+  /* ===== 玻璃态变量 ===== */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 8px 32px rgba(39, 91, 255, 0.08);
+  --glass-blur: blur(12px);
+
+  /* ===== 阴影系统 - 三级空间 ===== */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* 特殊阴影 - 悬浮感（蓝色系） */
+  --shadow-float: 0 12px 24px -4px rgba(39, 91, 255, 0.12);
+  --shadow-glow: 0 0 20px rgba(64, 158, 255, 0.15);
+
+  /* ===== 圆角系统 ===== */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ===== 过渡统一 ===== */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== 深色模式覆盖 ===== */
+.dark {
+  /* 中性色调整 */
+  --gray-50: #09090b;
+  --gray-100: #18181b;
+  --gray-200: #27272a;
+  --gray-300: #3f3f46;
+  --gray-400: #52525b;
+  --gray-500: #71717a;
+  --gray-600: #a1a1aa;
+  --gray-700: #d4d4d8;
+  --gray-800: #e4e4eb; /* 深色模式文字 */
+  --gray-900: #f4f4f5; /* 深色模式标题 */
+
+  /* 表面色 */
+  --surface-1: #18181b;
+  --surface-2: #27272a;
+  --surface-3: #3f3f46;
+  --surface-4: #52525b;
+
+  /* 玻璃态 - 深色模式 */
+  --glass-bg: rgba(39, 39, 42, 0.65);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  /* 阴影增强 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== 玻璃态混合器 ===== */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* 玻璃态变体 */
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 深色模式玻璃态 */
+.dark .glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.dark .glass-subtle {
+  background: rgba(39, 39, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-strong {
+  background: rgba(39, 39, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ===== 悬浮效果 ===== */
+.hover-float:hover {
+  box-shadow: var(--shadow-float);
+  transform: translateY(-2px);
+  transition: all var(--transition-base);
+}
+
+/* 发光效果 */
+.brand-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+/* 内阴影 - 用于输入框聚焦 */
+.input-focus-ring:focus {
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 3px rgba(39, 91, 255, 0.15);
+  outline: none;
+}
+
+/* ===== 圆角工具类 ===== */
+.radius-sm {
+  border-radius: var(--radius-sm);
+}
+.radius-md {
+  border-radius: var(--radius-md);
+}
+.radius-lg {
+  border-radius: var(--radius-lg);
+}
+.radius-xl {
+  border-radius: var(--radius-xl);
+}
+.radius-2xl {
+  border-radius: var(--radius-2xl);
+}
+.radius-full {
+  border-radius: var(--radius-full);
+}
+
+/* 不对称圆角（特色设计） */
+.asymmetric-card {
+  border-radius: 20px 4px 20px 20px;
+}
+
+.message-user {
+  border-radius: 20px 4px 20px 20px;
+}
+
+.message-ai {
+  border-radius: 20px 20px 20px 4px;
+}
+
+/* ===== 渐变文字效果 ===== */
+.text-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

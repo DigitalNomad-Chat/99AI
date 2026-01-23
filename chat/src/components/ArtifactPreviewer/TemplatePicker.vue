@@ -2,7 +2,12 @@
 import { ref, computed } from 'vue'
 import { ChevronDown } from '@icon-park/vue-next'
 import type { Template, TemplateCategory } from '@/utils/compiler/templates'
-import { templateLibrary, getTemplatesByType, getAllTemplates, searchTemplates } from '@/utils/compiler/templates'
+import {
+  templateLibrary,
+  getTemplatesByType,
+  getAllTemplates,
+  searchTemplates,
+} from '@/utils/compiler/templates'
 
 interface Props {
   type?: 'html' | 'react' | 'vue' | 'mermaid'
@@ -35,15 +40,13 @@ const categories = [
   { value: TemplateCategory.Basic, label: '基础' },
   { value: TemplateCategory.Interactive, label: '交互' },
   { value: TemplateCategory.Visualization, label: '可视化' },
-  {   value: TemplateCategory.Form, label: '表单' },
-  {   value: TemplateCategory.Animation, label: '动画' },
+  { value: TemplateCategory.Form, label: '表单' },
+  { value: TemplateCategory.Animation, label: '动画' },
 ]
 
 // 当前显示的模板列表
 const filteredTemplates = computed(() => {
-  let templates = props.type
-    ? getTemplatesByType(props.type as any)
-    : getAllTemplates()
+  let templates = props.type ? getTemplatesByType(props.type as any) : getAllTemplates()
 
   // 按分类过滤
   if (selectedCategory.value !== 'all') {
@@ -95,25 +98,17 @@ function handleClickOutside() {
     <!-- 触发按钮 -->
     <button
       class="picker-button"
-      :class="{ 'disabled': props.disabled, 'open': isOpen }"
+      :class="{ disabled: props.disabled, open: isOpen }"
       :disabled="props.disabled"
       @click="toggleDropdown"
     >
       <span class="selected-text">{{ selectedTemplateName }}</span>
-      <ChevronDown
-        :size="14"
-        class="dropdown-icon"
-        :class="{ 'rotated': isOpen }"
-      />
+      <ChevronDown :size="14" class="dropdown-icon" :class="{ rotated: isOpen }" />
     </button>
 
     <!-- 下拉菜单 -->
     <teleport to="body">
-      <div
-        v-if="isOpen"
-        class="dropdown-overlay"
-        @click="handleClickOutside"
-      >
+      <div v-if="isOpen" class="dropdown-overlay" @click="handleClickOutside">
         <div class="dropdown-menu" @click.stop>
           <!-- 搜索框 -->
           <div class="search-box">
@@ -131,7 +126,7 @@ function handleClickOutside() {
               v-for="cat in categories"
               :key="cat.value"
               class="category-tab"
-              :class="{ 'active': selectedCategory === cat.value }"
+              :class="{ active: selectedCategory === cat.value }"
               @click="selectedCategory = cat.value as any"
             >
               {{ cat.label }}
@@ -151,11 +146,7 @@ function handleClickOutside() {
                 <div class="template-name">{{ template.name }}</div>
                 <div class="template-desc">{{ template.description }}</div>
                 <div class="template-tags">
-                  <span
-                    v-for="tag in template.tags"
-                    :key="tag"
-                    class="tag"
-                  >
+                  <span v-for="tag in template.tags" :key="tag" class="tag">
                     {{ tag }}
                   </span>
                 </div>

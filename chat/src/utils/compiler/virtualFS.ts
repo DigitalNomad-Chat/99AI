@@ -113,7 +113,9 @@ export class VirtualFileSystem {
     const tree: VirtualFile = { ...file }
 
     if (file.type === FileType.Directory && file.children) {
-      tree.children = file.children.map(child => this.buildTree(child.id)).filter(Boolean) as VirtualFile[]
+      tree.children = file.children
+        .map(child => this.buildTree(child.id))
+        .filter(Boolean) as VirtualFile[]
     }
 
     return tree
@@ -282,26 +284,26 @@ export class VirtualFileSystem {
    */
   inferLanguage(extension: string): string {
     const languageMap: Record<string, string> = {
-      'js': 'javascript',
-      'jsx': 'javascript',
-      'ts': 'typescript',
-      'tsx': 'typescript',
-      'vue': 'vue',
-      'html': 'html',
-      'htm': 'html',
-      'css': 'css',
-      'scss': 'scss',
-      'less': 'less',
-      'json': 'json',
-      'md': 'markdown',
-      'py': 'python',
-      'rb': 'ruby',
-      'go': 'go',
-      'rs': 'rust',
-      'java': 'java',
-      'php': 'php',
-      'svg': 'svg',
-      'xml': 'xml',
+      js: 'javascript',
+      jsx: 'javascript',
+      ts: 'typescript',
+      tsx: 'typescript',
+      vue: 'vue',
+      html: 'html',
+      htm: 'html',
+      css: 'css',
+      scss: 'scss',
+      less: 'less',
+      json: 'json',
+      md: 'markdown',
+      py: 'python',
+      rb: 'ruby',
+      go: 'go',
+      rs: 'rust',
+      java: 'java',
+      php: 'php',
+      svg: 'svg',
+      xml: 'xml',
     }
 
     return languageMap[extension] || 'text'

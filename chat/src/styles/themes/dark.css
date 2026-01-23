@@ -1,8 +1,9 @@
 :root[data-theme='dark'] {
   /* ────────── Button Color ────────── */
-  --btn-bg-primary: #818cf8;
-  --btn-bg-primary-hover: #6366f1;
-  --btn-bg-primary-active: #4f46e5;
+  /* 深色模式使用更亮的蓝色系 */
+  --btn-bg-primary: #409eff; /* 辅助蓝（更亮） */
+  --btn-bg-primary-hover: #275bff; /* 主品牌色 */
+  --btn-bg-primary-active: #1d4ed8; /* 深蓝 */
   --btn-text-primary: #ffffff;
   --btn-border-primary: transparent;
 
@@ -15,8 +16,8 @@
   --btn-border-secondary-active: #9b9b9b;
 
   --btn-bg-ghost: transparent;
-  --btn-bg-ghost-hover: rgba(255, 255, 255, 0.08);
-  --btn-bg-ghost-active: rgba(255, 255, 255, 0.12);
+  --btn-bg-ghost-hover: rgba(64, 158, 255, 0.15); /* 蓝色悬停 */
+  --btn-bg-ghost-active: rgba(64, 158, 255, 0.25);
   --btn-text-ghost: #cdcdcd;
 
   --btn-bg-danger: #f87171;
@@ -27,7 +28,7 @@
   /* ────────── Input Color ────────── */
   --input-border: #424242;
   --input-border-hover: #676767;
-  --input-border-focus: #818cf8;
+  --input-border-focus: #409eff; /* 蓝色焦点 */
   --input-border-error: #f87171;
   --input-bg: #2f2f2f;
   --input-text: #cdcdcd;
@@ -38,5 +39,5 @@
   --tab-group-bg-filled-dark: #334155;
   --tab-text-dark: #9ca3af;
   --tab-active-bg-dark: #424242;
-  --tab-active-text-dark: #f3f4f6;
+  --tab-active-text-dark: #409eff; /* 蓝色激活 */
 }

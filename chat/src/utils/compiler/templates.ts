@@ -539,10 +539,11 @@ export function getTemplatesByCategory(category: TemplateCategory): Template[] {
  */
 export function searchTemplates(query: string): Template[] {
   const lowerQuery = query.toLowerCase()
-  return templateLibrary.filter(t =>
-    t.name.toLowerCase().includes(lowerQuery) ||
-    t.description.toLowerCase().includes(lowerQuery) ||
-    t.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
+  return templateLibrary.filter(
+    t =>
+      t.name.toLowerCase().includes(lowerQuery) ||
+      t.description.toLowerCase().includes(lowerQuery) ||
+      t.tags?.some(tag => tag.toLowerCase().includes(lowerQuery))
   )
 }
 

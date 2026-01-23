@@ -12,7 +12,16 @@ const LOCAL_NAME = 'artifactStorage'
 /**
  * Artifact 文件类型
  */
-export type ArtifactFileType = 'html' | 'css' | 'javascript' | 'typescript' | 'jsx' | 'tsx' | 'vue' | 'markdown' | 'json'
+export type ArtifactFileType =
+  | 'html'
+  | 'css'
+  | 'javascript'
+  | 'typescript'
+  | 'jsx'
+  | 'tsx'
+  | 'vue'
+  | 'markdown'
+  | 'json'
 
 /**
  * Artifact 内容类型
@@ -52,7 +61,7 @@ export interface Artifact {
   type: ArtifactType
   title: string
   files: ArtifactFile[]
-  fileTree?: FileTreeNode  // 文件树结构
+  fileTree?: FileTreeNode // 文件树结构
   createdAt: number
   updatedAt: number
 }

@@ -68,7 +68,12 @@ export const useArtifactStore = defineStore('artifact-store', {
     /**
      * 创建新的 Artifact
      */
-    createArtifact(type: ArtifactType, title: string, code: string, multiFile: boolean = false): string {
+    createArtifact(
+      type: ArtifactType,
+      title: string,
+      code: string,
+      multiFile: boolean = false
+    ): string {
       const id = `artifact-${Date.now()}`
 
       const artifact: Artifact = {

@@ -28,7 +28,10 @@ export interface ExportConfig {
 /**
  * 导出为 ZIP
  */
-export async function exportAsZip(artifact: Artifact, config: ExportConfig = { format: 'zip' }): Promise<Blob> {
+export async function exportAsZip(
+  artifact: Artifact,
+  config: ExportConfig = { format: 'zip' }
+): Promise<Blob> {
   const zip = new JSZip()
 
   // 添加所有文件
@@ -81,7 +84,10 @@ export function exportAsHtml(artifact: Artifact): Blob {
 /**
  * 导出为 PDF
  */
-export async function exportAsPdf(artifact: Artifact, config: ExportConfig = { format: 'pdf' }): Promise<Blob> {
+export async function exportAsPdf(
+  artifact: Artifact,
+  config: ExportConfig = { format: 'pdf' }
+): Promise<Blob> {
   const htmlBlob = exportAsHtml(artifact)
   const htmlContent = await blobToString(htmlBlob)
 
@@ -136,7 +142,10 @@ export async function exportAsPdf(artifact: Artifact, config: ExportConfig = { f
 /**
  * 导出为 PNG 图片
  */
-export async function exportAsPng(artifact: Artifact, config: ExportConfig = { format: 'png' }): Promise<Blob> {
+export async function exportAsPng(
+  artifact: Artifact,
+  config: ExportConfig = { format: 'png' }
+): Promise<Blob> {
   const htmlBlob = exportAsHtml(artifact)
   const htmlContent = await blobToString(htmlBlob)
 
@@ -171,7 +180,7 @@ export async function exportAsPng(artifact: Artifact, config: ExportConfig = { f
     // 将 canvas 转换为 Blob
     return new Promise((resolve, reject) => {
       canvas.toBlob(
-        (blob) => {
+        blob => {
           if (blob) {
             resolve(blob)
           } else {
@@ -285,10 +294,7 @@ export function getRecommendedFilename(artifact: Artifact, format: ExportFormat)
 /**
  * 批量导出
  */
-export async function exportMultiple(
-  artifacts: Artifact[],
-  format: ExportFormat
-): Promise<Blob> {
+export async function exportMultiple(artifacts: Artifact[], format: ExportFormat): Promise<Blob> {
   const zip = new JSZip()
 
   for (const artifact of artifacts) {
@@ -306,7 +312,9 @@ export function createSelfContainedHtml(artifact: Artifact): string {
   // 合并所有文件到一个 HTML
   const htmlFile = artifact.files.find(f => f.type === 'html') || artifact.files[0]
   const cssFiles = artifact.files.filter(f => f.type === 'css')
-  const jsFiles = artifact.files.filter(f => f.type === 'javascript' || f.type === 'jsx' || f.type === 'tsx')
+  const jsFiles = artifact.files.filter(
+    f => f.type === 'javascript' || f.type === 'jsx' || f.type === 'tsx'
+  )
 
   let html = htmlFile.content
 

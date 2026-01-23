@@ -121,17 +121,24 @@ module.exports = {
           950: '#0d0d0d',
         },
         primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#275bff' /* 主品牌色 - client 项目 */,
+          600: '#1d4ed8',
+          700: '#1e40af',
+          800: '#1e3a8a',
+          900: '#1e3a8a',
+          950: '#172554',
+        },
+
+        /* 辅助蓝色 - 来自 client 项目 */
+        secondary: {
+          DEFAULT: '#409eff',
+          light: '#53a8ff',
+          dark: '#337ecc',
         },
 
         /* ===== 按钮主题化系统 ===== */
@@ -192,8 +199,8 @@ module.exports = {
           '::placeholder': { color: '#9b9b9b' },
           '&:hover:not(:disabled)': { borderColor: '#cdcdcd' },
           '&:focus:not(:disabled)': {
-            borderColor: '#4f46e5',
-            boxShadow: '0 0 0 2px #4f46e522',
+            borderColor: '#275bff',
+            boxShadow: '0 0 0 2px #275bff22',
           },
           '&.is-error': {
             borderColor: '#ef4444',
@@ -207,8 +214,8 @@ module.exports = {
             '::placeholder': { color: '#9b9b9b' },
             '&:hover:not(:disabled)': { borderColor: '#676767' },
             '&:focus:not(:disabled)': {
-              borderColor: '#818cf8',
-              boxShadow: '0 0 0 2px #818cf822',
+              borderColor: '#409eff',
+              boxShadow: '0 0 0 2px #409eff22',
             },
             '&.is-error': {
               borderColor: '#f87171',
@@ -480,28 +487,28 @@ module.exports = {
          * 用于表单提交、确认操作等主要操作
          */
         '.btn-primary': {
-          backgroundColor: '#4f46e5' /* 主题色 */,
+          backgroundColor: '#275bff' /* 主题色 */,
           color: '#ffffff',
           borderWidth: '0',
           borderColor: 'transparent',
           '&:hover:not(:disabled)': {
-            backgroundColor: '#6366f1' /* 更浅色调 */,
+            backgroundColor: '#409eff' /* 更浅色调 */,
             borderColor: 'transparent',
           },
           '&:active:not(:disabled)': {
-            backgroundColor: '#4338ca' /* 更深色调 */,
+            backgroundColor: '#1d4ed8' /* 更深色调 */,
             borderColor: 'transparent',
           },
           '.dark &': {
-            backgroundColor: '#818cf8',
+            backgroundColor: '#409eff',
             color: '#ffffff',
             borderColor: 'transparent',
             '&:hover:not(:disabled)': {
-              backgroundColor: '#6366f1',
+              backgroundColor: '#409eff',
               borderColor: 'transparent',
             },
             '&:active:not(:disabled)': {
-              backgroundColor: '#4f46e5',
+              backgroundColor: '#275bff',
               borderColor: 'transparent',
             },
           },
@@ -687,11 +694,11 @@ module.exports = {
           fontSize: '1rem' /* text-base */,
           fontWeight: '600' /* font-semibold */,
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' /* shadow-sm */,
-          backgroundColor: '#4f46e5' /* primary-600 */,
+          backgroundColor: '#275bff' /* primary-600 */,
           color: '#ffffff' /* text-white */,
           transition: 'all 0.2s',
           '&:hover:not(:disabled)': {
-            backgroundColor: '#4338ca' /* primary-700 */,
+            backgroundColor: '#1d4ed8' /* primary-700 */,
           },
           '&:disabled': {
             backgroundColor: '#a5b4fc' /* primary-300 */,
@@ -726,11 +733,11 @@ module.exports = {
           fontSize: '1rem' /* text-base */,
           fontWeight: '600' /* font-semibold */,
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' /* shadow-sm */,
-          backgroundColor: '#4f46e5' /* primary-600 */,
+          backgroundColor: '#275bff' /* primary-600 */,
           color: '#ffffff' /* text-white */,
           transition: 'all 0.2s',
           '&:hover:not(:disabled)': {
-            backgroundColor: '#4338ca' /* primary-700 */,
+            backgroundColor: '#1d4ed8' /* primary-700 */,
           },
           '.dark &': {
             backgroundColor: '#676767' /* gray-600 - 参考btn-pill激活状态背景 */,
@@ -803,11 +810,11 @@ module.exports = {
           overflow: 'hidden',
           '&:hover:not(:disabled)': {
             backgroundColor: '#ffffff' /* white */,
-            color: '#6366f1' /* primary-500 */,
+            color: '#409eff' /* primary-500 */,
           },
           '&:active:not(:disabled)': {
             backgroundColor: '#ffffff',
-            color: '#4f46e5' /* primary-600 */,
+            color: '#275bff' /* primary-600 */,
           },
           '&:disabled': {
             opacity: '.5',
@@ -935,11 +942,11 @@ module.exports = {
           fontSize: '1rem',
           lineHeight: '1rem',
           fontWeight: '600',
-          backgroundColor: '#4f46e5',
+          backgroundColor: '#275bff',
           color: '#ffffff',
           transition: 'all 0.2s',
           '&:hover:not(:disabled)': {
-            backgroundColor: '#6366f1',
+            backgroundColor: '#409eff',
           },
           '&:focus-visible': {
             outline: '2px solid transparent',
@@ -950,10 +957,10 @@ module.exports = {
             cursor: 'not-allowed',
           },
           '.dark &': {
-            backgroundColor: '#818cf8',
+            backgroundColor: '#409eff',
             color: '#ffffff',
             '&:hover:not(:disabled)': {
-              backgroundColor: '#6366f1',
+              backgroundColor: '#409eff',
             },
           },
         },
@@ -993,10 +1000,11 @@ module.exports = {
           color: '#6b7280' /* gray-500 */,
           boxShadow: '0 1px 1px rgba(0, 0, 0, 0.01)',
 
-          /* 悬停效果 */
+          /* 悬停效果 - 使用淡蓝色 */
           '&:hover:not(:disabled)': {
-            backgroundColor: '#f9f9f9' /* gray-50 */,
-            color: '#4b5563' /* gray-600 */,
+            backgroundColor: '#e8f0fe' /* 淡蓝色背景 */,
+            borderColor: '#bfdbfe' /* blue-200 */,
+            color: '#275bff' /* 蓝色文字 */,
           },
 
           /* 暗色模式 */
@@ -1005,8 +1013,9 @@ module.exports = {
             borderColor: '#2f2f2f' /* gray-750 */,
             color: '#9b9b9b' /* gray-500 */,
             '&:hover:not(:disabled)': {
-              backgroundColor: '#424242' /* gray-700 */,
-              color: '#cdcdcd' /* gray-300 */,
+              backgroundColor: '#1e3a5f' /* 淡蓝色背景（深色模式） */,
+              borderColor: '#409eff' /* 蓝色边框 */,
+              color: '#53a8ff' /* 蓝色文字（深色模式） */,
             },
           },
 
@@ -1022,28 +1031,28 @@ module.exports = {
          * 激活状态的药丸按钮 (.btn-pill-active)
          */
         '.btn-pill-active': {
-          backgroundColor: '#e0e7ff' /* primary-100 */,
-          borderColor: '#e0e7ff',
-          color: '#4f46e5' /* primary-600 */,
-          border: '1px solid #e0e7ff',
+          backgroundColor: '#dbeafe' /* blue-100，更亮的蓝色 */,
+          borderColor: '#bfdbfe' /* blue-200 */,
+          color: '#275bff' /* primary-600 */,
+          border: '1px solid #bfdbfe',
 
           // boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
 
           /* 悬停效果 */
           '&:hover:not(:disabled)': {
-            backgroundColor: '#e0e7ff' /* primary-100 */,
-            borderColor: '#e0e7ff',
-            color: '#4f46e5' /* primary-600 */,
+            backgroundColor: '#bfdbfe' /* blue-200，悬停时更深一点 */,
+            borderColor: '#93c5fd' /* blue-300 */,
+            color: '#1d4ed8' /* 更深的蓝色 */,
           },
 
           '.dark &': {
-            backgroundColor: '#676767' /* gray-600 */,
-            borderColor: '#2f2f2f' /* gray-750 */,
-            color: '#ececec' /* gray-100 */,
+            backgroundColor: '#1e3a5f' /* 深蓝色背景 */,
+            borderColor: '#409eff' /* 蓝色边框 */,
+            color: '#53a8ff' /* 浅蓝色文字 */,
             '&:hover:not(:disabled)': {
-              backgroundColor: '#676767' /* 保持背景不变 */,
-              borderColor: '#2f2f2f' /* 保持边框不变 */,
-              color: '#ececec' /* 保持文字颜色不变 */,
+              backgroundColor: '#275bff' /* 悬停时更亮 */,
+              borderColor: '#409eff' /* 保持边框 */,
+              color: '#ffffff' /* 白色文字 */,
             },
           },
         },
@@ -1065,8 +1074,8 @@ module.exports = {
           '::placeholder': { color: '#9b9b9b' },
           '&:hover:not(:disabled)': { borderColor: '#cdcdcd' },
           '&:focus:not(:disabled)': {
-            borderColor: '#4f46e5',
-            boxShadow: '0 0 0 2px #4f46e522',
+            borderColor: '#275bff',
+            boxShadow: '0 0 0 2px #275bff22',
           },
           '&.is-error': {
             borderColor: '#ef4444',
@@ -1080,8 +1089,8 @@ module.exports = {
             '::placeholder': { color: '#9b9b9b' },
             '&:hover:not(:disabled)': { borderColor: '#676767' },
             '&:focus:not(:disabled)': {
-              borderColor: '#818cf8',
-              boxShadow: '0 0 0 2px #818cf822',
+              borderColor: '#409eff',
+              boxShadow: '0 0 0 2px #409eff22',
             },
             '&.is-error': {
               borderColor: '#f87171',
@@ -1181,7 +1190,7 @@ module.exports = {
         /* 标签活动状态 */
         '.tab-active': {
           backgroundColor: '#ffffff',
-          color: '#4f46e5',
+          color: '#275bff',
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
           '.dark &': {
             backgroundColor: '#374151',
@@ -1474,7 +1483,7 @@ module.exports = {
         },
         '.menu-button-active': {
           backgroundColor: '#e0e7ff' /* primary-100 */,
-          color: '#4f46e5' /* primary-600 */,
+          color: '#275bff' /* primary-600 */,
           '.dark &': {
             backgroundColor: '#424242' /* gray-700 */,
             color: '#a5b4fc' /* primary-300 */,
@@ -1700,19 +1709,49 @@ module.exports = {
 
         /**
          * 操作图标按钮 (.btn-icon-action)
-         * 专为操作类图标按钮设计，统一文字色与悬浮色，支持暗色模式
+         * 专为操作类图标按钮设计，与 .btn-pill 保持一致的视觉风格
+         * 悬停时使用淡蓝色
          */
         '.btn-icon-action': {
-          color: '#9b9b9b', // gray-500
-          transition: 'color 0.2s',
-          '.dark &': {
-            color: '#9b9b9b', // gray-500
-          },
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: '9999px' /* rounded-full */,
+          padding: '0.5rem',
+          width: '2rem' /* w-8 */,
+          height: '2rem' /* h-8 */,
+          transition: 'all 0.15s ease',
+          cursor: 'pointer',
+          userSelect: 'none',
+          border: '1px solid #cdcdcd' /* border-gray-100 */,
+          backgroundColor: '#ffffff',
+          color: '#6b7280' /* gray-500 */,
+          boxShadow: '0 1px 1px rgba(0, 0, 0, 0.01)',
+
+          /* 悬停效果 - 使用淡蓝色 */
           '&:hover:not(:disabled)': {
-            color: '#424242', // gray-700
+            backgroundColor: '#e8f0fe' /* 淡蓝色背景 */,
+            borderColor: '#bfdbfe' /* blue-200 */,
+            color: '#275bff' /* 蓝色文字 */,
           },
-          '.dark &:hover:not(:disabled)': {
-            color: '#ececec', // gray-300
+
+          /* 暗色模式 */
+          '.dark &': {
+            backgroundColor: '#2f2f2f' /* gray-750 */,
+            borderColor: '#2f2f2f' /* gray-750 */,
+            color: '#9b9b9b' /* gray-500 */,
+            '&:hover:not(:disabled)': {
+              backgroundColor: '#1e3a5f' /* 淡蓝色背景（深色模式） */,
+              borderColor: '#409eff' /* 蓝色边框 */,
+              color: '#53a8ff' /* 蓝色文字（深色模式） */,
+            },
+          },
+
+          /* 禁用状态 */
+          '&:disabled': {
+            opacity: '.6',
+            cursor: 'not-allowed',
+            pointerEvents: 'none',
           },
         },
 
@@ -1842,10 +1881,10 @@ module.exports = {
 
         /* 头像样式变体 */
         '.avatar-primary': {
-          backgroundColor: '#4f46e5' /* primary-600 */,
+          backgroundColor: '#275bff' /* primary-600 */,
           color: '#ffffff' /* white */,
           '.dark &': {
-            backgroundColor: '#4f46e5' /* 保持主题色 */,
+            backgroundColor: '#275bff' /* 保持主题色 */,
             color: '#ffffff' /* white */,
           },
         },

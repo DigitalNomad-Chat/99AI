@@ -86,10 +86,10 @@ function isActive(uuid: number) {
   </p>
   <div v-for="item of dataSources" :key="`${item.uuid}`">
     <div
-      class="relative flex items-center gap-3 px-3 py-2 break-all rounded-lg cursor-pointer hover:bg-white group dark:hover:bg-gray-800 font-medium text-sm"
+      class="relative flex items-center gap-3 px-3 py-2 break-all rounded-lg cursor-pointer hover:bg-white group dark:hover:bg-gray-800 font-medium text-sm transition-colors duration-200"
       :class="
         isActive(item.uuid)
-          ? ['bg-white', 'text-primary-600', 'dark:bg-gray-800', 'dark:text-white']
+          ? ['bg-[#e8f0fe]', 'text-primary-600', 'dark:bg-[#1e3a5f]', 'dark:text-white']
           : ['text-gray-700', 'dark:bg-gray-900', 'dark:text-gray-400']
       "
       @click="handleSelect(item)"

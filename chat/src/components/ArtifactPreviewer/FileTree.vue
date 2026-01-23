@@ -109,18 +109,14 @@ function isSelected(file: VirtualFile): boolean {
       :key="file.id"
       class="file-item"
       :class="{
-        'selected': isSelected(file),
-        'is-directory': file.type === FileType.Directory
+        selected: isSelected(file),
+        'is-directory': file.type === FileType.Directory,
       }"
       @click="file.type === FileType.File ? selectFile(file) : toggleFolder(file, $event)"
     >
       <!-- 图标和名称 -->
       <div class="file-content">
-        <component
-          :is="getFileIcon(file)"
-          :size="16"
-          :style="{ color: getIconColor(file) }"
-        />
+        <component :is="getFileIcon(file)" :size="16" :style="{ color: getIconColor(file) }" />
         <span class="file-name">{{ file.name }}</span>
       </div>
 

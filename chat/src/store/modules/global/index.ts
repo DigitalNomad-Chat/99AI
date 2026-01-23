@@ -88,7 +88,7 @@ export const useGlobalStore = defineStore('global-store', {
     sidebarConfig: {
       width: 50,
       position: 'right',
-      resizable: true,  // 启用拖拽调整
+      resizable: true, // 启用拖拽调整
       animation: true,
     },
 

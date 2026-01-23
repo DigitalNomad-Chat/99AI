@@ -284,16 +284,14 @@ onMounted(() => {
           <!-- 文件树面板 -->
           <div
             class="file-tree-panel border-r dark:border-gray-700 flex flex-col transition-all duration-300"
-            :class="{ 'collapsed': isTreeCollapsed }"
+            :class="{ collapsed: isTreeCollapsed }"
           >
             <!-- 面板标题 -->
             <div
               class="flex items-center justify-between px-3 py-2 border-b dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               @click="toggleTree"
             >
-              <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
-                📁 文件
-              </span>
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-400"> 📁 文件 </span>
               <component
                 :is="isTreeCollapsed ? ChevronLeft : ChevronRight"
                 :size="14"

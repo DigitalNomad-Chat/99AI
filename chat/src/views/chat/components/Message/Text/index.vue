@@ -864,10 +864,7 @@ onMounted(() => {
             }
 
             // 更新当前点击的内容到全局存储，标记类型
-            globalStore.updateHtmlContent(
-              codeElement.textContent || '',
-              contentType
-            )
+            globalStore.updateHtmlContent(codeElement.textContent || '', contentType)
             // 打开预览器，由预览器自动收集所有代码块
             globalStore.updateHtmlPreviewer(true)
           }
@@ -892,23 +889,25 @@ onMounted(() => {
     console.log('[detectCodeType] First line:', firstLine)
 
     // 检查第一行是否为 mermaid 关键字
-    if (firstLine?.startsWith('graph ') ||
-        firstLine?.startsWith('flowchart ') ||
-        firstLine?.startsWith('sequencediagram') ||
-        firstLine?.startsWith('classdiagram') ||
-        firstLine?.startsWith('statediagram') ||
-        firstLine?.startsWith('gantt') ||
-        firstLine?.startsWith('pie ') ||
-        firstLine?.startsWith('gitgraph') ||
-        firstLine?.startsWith('mindmap') ||
-        firstLine?.startsWith('erdiagram')) {
+    if (
+      firstLine?.startsWith('graph ') ||
+      firstLine?.startsWith('flowchart ') ||
+      firstLine?.startsWith('sequencediagram') ||
+      firstLine?.startsWith('classdiagram') ||
+      firstLine?.startsWith('statediagram') ||
+      firstLine?.startsWith('gantt') ||
+      firstLine?.startsWith('pie ') ||
+      firstLine?.startsWith('gitgraph') ||
+      firstLine?.startsWith('mindmap') ||
+      firstLine?.startsWith('erdiagram')
+    ) {
       console.log('[detectCodeType] Detected as mermaid (first line match)')
       return 'mermaid'
     }
 
     // 使用正则表达式检测（备用）
     const mermaidPatterns = [
-      /graph\s+(TD|LR|BT|RL)/,  // 移除了 \n 要求
+      /graph\s+(TD|LR|BT|RL)/, // 移除了 \n 要求
       /sequenceDiagram/i,
       /classDiagram/i,
       /stateDiagram/i,
@@ -925,9 +924,11 @@ onMounted(() => {
     }
 
     // React 检测
-    if (/import.*from\s+['"](react|react-dom)['"]/.test(trimmed) ||
-        /React\.(createElement|useState|useEffect)/.test(trimmed) ||
-        /export\s+(default\s+)?(function|const|class).*React/.test(trimmed)) {
+    if (
+      /import.*from\s+['"](react|react-dom)['"]/.test(trimmed) ||
+      /React\.(createElement|useState|useEffect)/.test(trimmed) ||
+      /export\s+(default\s+)?(function|const|class).*React/.test(trimmed)
+    ) {
       console.log('[detectCodeType] Detected as react')
       return 'react'
     }

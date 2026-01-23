@@ -1481,7 +1481,9 @@ provide('tryParseJson', tryParseJson)
     </div>
 
     <!-- HTML 预览侧边栏（仅在侧边栏模式时显示） -->
-    <HtmlSidebar v-if="useGlobalStore.showHtmlPreviewer && useGlobalStore.previewDisplayMode === 'sidebar'" />
+    <HtmlSidebar
+      v-if="useGlobalStore.showHtmlPreviewer && useGlobalStore.previewDisplayMode === 'sidebar'"
+    />
 
     <!-- 通用应用配置弹窗 -->
     <transition name="modal-fade">
