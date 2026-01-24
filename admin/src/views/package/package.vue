@@ -330,7 +330,7 @@ meta:
       </HButton>
     </PageHeader>
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="套餐状态" prop="status">
           <el-select
             v-model="formInline.status"
@@ -352,10 +352,8 @@ meta:
           <el-button @click="handlerReset(formRef)"> 重置 </el-button>
         </el-form-item>
       </el-form>
-    </page-main>
 
-    <page-main style="width: 100%">
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="large">
+      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
         <el-table-column fixed prop="name" label="套餐名称" width="150" />
         <el-table-column prop="order" label="排序ID" align="center" width="100" />
         <el-table-column prop="appCats" label="套餐应用" width="200" align="center">
@@ -400,7 +398,7 @@ meta:
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="200">
           <template #default="scope">
-            <el-button link type="primary" size="small" @click="handleUpdatePackage(scope.row)">
+            <el-button class="action-btn action-btn-primary" @click="handleUpdatePackage(scope.row)">
               修改套餐
             </el-button>
             <el-popconfirm
@@ -410,7 +408,7 @@ meta:
               @confirm="handleDeletePackage(scope.row.id)"
             >
               <template #reference>
-                <el-button link type="danger" size="small"> 删除套餐 </el-button>
+                <el-button class="action-btn action-btn-danger"> 删除套餐 </el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -588,3 +586,75 @@ meta:
     </el-dialog>
   </div>
 </template>
+
+<style scoped>
+  /* 操作按钮样式 - 提升可读性和点击体验 */
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .action-btn-primary {
+    color: #409eff;
+    border-color: #d9ecff;
+  }
+
+  .action-btn-primary:hover {
+    background: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+
+  .action-btn-primary:active {
+    background: #d9ecff;
+  }
+
+  .action-btn-danger {
+    color: #f56c6c;
+    border-color: #fde2e2;
+  }
+
+  .action-btn-danger:hover {
+    background: #fef0f0;
+    border-color: #f56c6c;
+    color: #f56c6c;
+  }
+
+  .action-btn-danger:active {
+    background: #fde2e2;
+  }
+
+  /* 确保按钮在表格中居中对齐 */
+  .el-table .el-table__cell {
+    padding: 12px 0;
+  }
+
+  .category-selector {
+    width: 100%;
+  }
+
+  .selected-categories {
+    min-height: 32px;
+    padding: 4px 0;
+  }
+
+  .category-options .el-tag {
+    transition: all 0.3s;
+  }
+
+  .category-options .el-tag:not(.is-disabled):hover {
+    transform: scale(1.05);
+  }
+
+  .category-options .el-tag.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+</style>

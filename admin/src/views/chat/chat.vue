@@ -164,7 +164,7 @@ meta:
       </template>
     </PageHeader>
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="用户名称" prop="userId">
           <el-select
             v-model="formInline.userId"
@@ -219,15 +219,14 @@ meta:
           <el-button @click="handlerReset(formRef)"> 重置 </el-button>
         </el-form-item>
       </el-form>
-    </page-main>
 
-    <page-main style="width: 100%">
       <el-table
         v-loading="loading"
         border
         :data="tableData"
         style="width: 100%"
-        size="large"
+        size="default"
+        class="mt-4"
         :tooltip-options="{}"
       >
         <el-table-column fixed prop="username" label="用户信息" width="150">
@@ -272,7 +271,7 @@ meta:
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right">
           <template #default="scope">
-            <el-button type="primary" link @click="showDetails(scope.row)">详情</el-button>
+            <el-button class="action-btn action-btn-primary" @click="showDetails(scope.row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -445,5 +444,53 @@ meta:
     border-radius: 3px;
     padding: 0.2em 0.4em;
     font-family: monospace;
+  }
+
+  /* 操作按钮样式 - 提升可读性和点击体验 */
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .action-btn-primary {
+    color: #409eff;
+    border-color: #d9ecff;
+  }
+
+  .action-btn-primary:hover {
+    background: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+
+  .action-btn-primary:active {
+    background: #d9ecff;
+  }
+
+  .action-btn-danger {
+    color: #f56c6c;
+    border-color: #fde2e2;
+  }
+
+  .action-btn-danger:hover {
+    background: #fef0f0;
+    border-color: #f56c6c;
+    color: #f56c6c;
+  }
+
+  .action-btn-danger:active {
+    background: #fde2e2;
+  }
+
+  /* 确保按钮在表格中居中对齐 */
+  .el-table .el-table__cell {
+    padding: 12px 0;
   }
 </style>

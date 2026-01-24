@@ -60,24 +60,179 @@ meta:
     flowithKey: '',
     backgroundImg: '',
     prompt: '',
+    appType: 0,
+    workflowApiUrl: '',
+    workflowApiKey: '',
+    workflowAppId: '',
   });
 
   // 添加特殊模型类型
-  const specialModelType = ref('none'); // none, gpts, flowith
+  const specialModelType = ref('none'); // none, gpts, fastgpt, flowith
+
+  // ========== 草稿自动保存功能 ==========
+  const DRAFT_KEY = 'app_form_draft';
+  const DRAFT_EXPIRE_TIME = 30 * 60 * 1000; // 30分钟过期
+  const showDraftRestoreDialog = ref(false);
+  const draftData = ref<any>(null);
+
+  // 保存草稿
+  const saveDraft = () => {
+    try {
+      const data = {
+        formPackage: { ...formPackage },
+        specialModelType: specialModelType.value,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.error('草稿保存失败:', e);
+    }
+  };
+
+  // 获取草稿
+  const getDraft = () => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (!saved) return null;
+
+      const parsed = JSON.parse(saved);
+
+      // 检查过期
+      if (Date.now() - parsed.timestamp > DRAFT_EXPIRE_TIME) {
+        localStorage.removeItem(DRAFT_KEY);
+        return null;
+      }
+
+      return parsed;
+    } catch (e) {
+      console.error('草稿读取失败:', e);
+      return null;
+    }
+  };
+
+  // 清除草稿
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    draftData.value = null;
+  };
+
+  // 恢复草稿
+  const restoreDraft = () => {
+    if (!draftData.value) return;
+
+    Object.assign(formPackage, draftData.value.formPackage);
+    specialModelType.value = draftData.value.specialModelType;
+
+    ElMessage({ type: 'success', message: '草稿已恢复' });
+    showDraftRestoreDialog.value = false;
+    clearDraft();
+  };
+
+  // 忽略草稿
+  const ignoreDraft = () => {
+    showDraftRestoreDialog.value = false;
+    clearDraft();
+  };
+
+  // 监听表单变化自动保存草稿（深度监听）
+  watch(
+    formPackage,
+    () => {
+      // 只在对话框打开且有内容时保存
+      if (visible.value) {
+        saveDraft();
+      }
+    },
+    { deep: true }
+  );
+
+  // 监听 specialModelType 变化保存草稿
+  watch(specialModelType, () => {
+    if (visible.value) {
+      saveDraft();
+    }
+  });
+  // ========== 结束：草稿自动保存功能 ==========
 
   // 监听特殊模型类型变化
   watch(specialModelType, (newValue) => {
     if (newValue === 'none') {
       formPackage.isGPTs = 0;
       formPackage.isFlowith = 0;
+      formPackage.appType = 0;
     } else if (newValue === 'gpts') {
       formPackage.isGPTs = 1;
       formPackage.isFlowith = 0;
+      formPackage.appType = 0;
+    } else if (newValue === 'fastgpt') {
+      formPackage.isGPTs = 0;
+      formPackage.isFlowith = 0;
+      formPackage.appType = 1;
     } else if (newValue === 'flowith') {
       formPackage.isGPTs = 0;
       formPackage.isFlowith = 1;
+      formPackage.appType = 0;
     }
   });
+
+  // 工作流测试相关
+  const testingWorkflow = ref(false);
+  const workflowTestResult = ref<{ success: boolean; message: string } | null>(null);
+
+  // 工作流配置是否完整（仅需要API地址和Key）
+  const isWorkflowConfigComplete = computed(() => {
+    return (
+      formPackage.workflowApiUrl &&
+      formPackage.workflowApiKey
+    );
+  });
+
+  // 测试工作流连接
+  async function testWorkflowConnection() {
+    if (!isWorkflowConfigComplete.value) {
+      ElMessage.warning('请先完成工作流配置');
+      return;
+    }
+
+    testingWorkflow.value = true;
+    workflowTestResult.value = null;
+
+    try {
+      const response = await fetch('/api/workflow/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          appType: 1,
+          workflowApiUrl: formPackage.workflowApiUrl,
+          workflowApiKey: formPackage.workflowApiKey,
+          workflowAppId: formPackage.workflowAppId,
+        }),
+      });
+
+      const result = await response.json();
+      workflowTestResult.value = {
+        success: result.code === 200,
+        message: result.message || '测试完成',
+      };
+
+      if (result.code === 200) {
+        ElMessage.success('工作流连接测试成功');
+      } else {
+        ElMessage.error('工作流连接测试失败');
+      }
+    } catch (error) {
+      workflowTestResult.value = {
+        success: false,
+        message: `测试失败: ${error.message}`,
+      };
+      ElMessage.error('工作流连接测试失败');
+    } finally {
+      testingWorkflow.value = false;
+    }
+  }
 
   const rules = reactive<FormRules>({
     catId: [{ required: true, message: '请选择App分类', trigger: 'change' }],
@@ -98,6 +253,10 @@ meta:
     flowithKey: [{ required: false, message: '请填写flowith模型密钥', trigger: 'blur' }],
     backgroundImg: [{ required: false, message: '请填写App背景图URL', trigger: 'blur' }],
     prompt: [{ required: false, message: '请填写App提问模版', trigger: 'blur' }],
+    // FastGPT 工作流配置验证
+    workflowApiUrl: [{ required: true, message: '请填写工作流API地址', trigger: 'blur' }],
+    workflowApiKey: [{ required: true, message: '请填写工作流API Key', trigger: 'blur' }],
+    workflowAppId: [{ required: false, message: '应用标识（仅用于显示）', trigger: 'blur' }],
   });
 
   const tableData = ref([]);
@@ -184,6 +343,10 @@ meta:
       flowithKey,
       backgroundImg,
       prompt,
+      appType,
+      workflowApiUrl,
+      workflowApiKey,
+      workflowAppId,
     } = row;
 
     // 设置特殊模型类型
@@ -191,6 +354,8 @@ meta:
       specialModelType.value = 'gpts';
     } else if (isFlowith === 1) {
       specialModelType.value = 'flowith';
+    } else if (appType === 1) {
+      specialModelType.value = 'fastgpt';
     } else {
       specialModelType.value = 'none';
     }
@@ -228,6 +393,10 @@ meta:
         flowithKey,
         backgroundImg,
         prompt,
+        appType: appType || 0,
+        workflowApiUrl: workflowApiUrl || '',
+        workflowApiKey: workflowApiKey || '',
+        workflowAppId: workflowAppId || '',
       });
 
       // --- 新增：处理 prompt 模板 ---
@@ -237,7 +406,11 @@ meta:
           templateFields.value.forEach((field) => {
             if (!field.id) field.id = uuidv4();
             if (field.title === undefined) field.title = '';
+            if (field.placeholder === undefined) field.placeholder = '';
             if (field.type === 'select' && !field.options) field.options = [];
+            if (field.isVariable === undefined) field.isVariable = field.type !== 'file' && field.type !== 'image';
+            if (field.required === undefined) field.required = false;
+            if (field.variableName === undefined) field.variableName = '';
           });
           usePromptTemplate.value = 'template';
         } catch (e) {
@@ -263,6 +436,60 @@ meta:
     usePromptTemplate.value = 'plain';
     templateFields.value = [];
     // --- 结束：重置模板状态 ---
+    // 关闭对话框时保存草稿（如果表单有内容）
+    if (formPackage.name || formPackage.des || formPackage.catId.length > 0) {
+      saveDraft();
+    }
+  }
+
+  // 打开新建对话框（检测草稿）
+  function openCreateDialog() {
+    activeAppCatId.value = 0;
+    isUserApp.value = false;
+
+    // 检测草稿
+    const draft = getDraft();
+    if (draft && (draft.formPackage.name || draft.formPackage.des || draft.formPackage.catId.length > 0)) {
+      draftData.value = draft;
+      showDraftRestoreDialog.value = true;
+      return; // 等待用户选择是否恢复草稿
+    }
+
+    // 没有草稿，直接打开对话框
+    resetFormToDefault();
+    visible.value = true;
+  }
+
+  // 重置表单为默认值
+  function resetFormToDefault() {
+    Object.assign(formPackage, {
+      id: '',
+      name: '',
+      catId: [] as string[],
+      des: '',
+      preset: '',
+      coverImg: '',
+      demoData: '',
+      order: 100,
+      status: 1,
+      isGPTs: 0,
+      gizmoID: '',
+      isFixedModel: 0,
+      appModel: '',
+      isFlowith: 0,
+      flowithId: '',
+      flowithName: '',
+      flowithKey: '',
+      backgroundImg: '',
+      prompt: '',
+      appType: 0,
+      workflowApiUrl: '',
+      workflowApiKey: '',
+      workflowAppId: '',
+    });
+    specialModelType.value = 'none';
+    usePromptTemplate.value = 'plain';
+    templateFields.value = [];
   }
 
   async function handleDeletePackage(row: any) {
@@ -475,6 +702,8 @@ meta:
           await ApiApp.createApp(newApp);
           ElMessage({ type: 'success', message: '创建新的应用成功！' });
         }
+        // 提交成功后清除草稿
+        clearDraft();
         visible.value = false;
         queryAppList();
       }
@@ -564,9 +793,12 @@ meta:
     Array<{
       id: string;
       title: string;
-      type: 'input' | 'select';
+      type: 'input' | 'select' | 'file' | 'image';
       placeholder: string;
       options?: string[];
+      isVariable?: boolean;
+      variableName?: string;
+      required?: boolean;
     }>
   >([]);
   // --- 结束：新增状态 ---
@@ -744,14 +976,14 @@ meta:
           </div>
         </div>
       </template>
-      <HButton outline @click="visible = true">
+      <HButton outline @click="openCreateDialog">
         <SvgIcon name="ic:baseline-plus" />
         新增应用
       </HButton>
     </PageHeader>
 
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="App分类" prop="catId">
           <el-select
             v-model="formInline.catId"
@@ -782,10 +1014,8 @@ meta:
           <el-button @click="handlerReset(formRef)"> 重置 </el-button>
         </el-form-item>
       </el-form>
-    </page-main>
 
-    <page-main style="width: 100%">
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="large">
+      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
         <el-table-column prop="coverImg" label="应用封面" width="100">
           <template #default="scope">
             <el-image style="height: 50px" :src="scope.row.coverImg" fit="fill" />
@@ -872,9 +1102,7 @@ meta:
           <template #default="scope">
             <el-button
               v-if="scope.row.role === 'system' || scope.row.public"
-              link
-              type="primary"
-              size="small"
+              class="action-btn action-btn-primary"
               @click="handleUpdatePackage(scope.row)"
             >
               编辑
@@ -887,7 +1115,7 @@ meta:
               @confirm="handleDeletePackage(scope.row)"
             >
               <template #reference>
-                <el-button link type="danger" size="small"> 删除应用 </el-button>
+                <el-button class="action-btn action-btn-danger"> 删除应用 </el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -1003,6 +1231,7 @@ meta:
               <el-radio-group v-model="specialModelType">
                 <el-radio label="none">不使用</el-radio>
                 <el-radio label="gpts">GPTs</el-radio>
+                <el-radio label="fastgpt">FastGPT工作流</el-radio>
                 <el-radio label="flowith" :disabled="true" @click="showDevOnlyMessage"
                   >Flowith</el-radio
                 >
@@ -1056,6 +1285,53 @@ meta:
           <el-col :span="12" v-if="specialModelType === 'gpts'">
             <!-- Placeholder Column -->
           </el-col>
+
+          <!-- FastGPT 工作流配置 -->
+          <el-col :span="12" v-if="specialModelType === 'fastgpt'">
+            <el-form-item label="API地址" prop="workflowApiUrl">
+              <el-input
+                v-model="formPackage.workflowApiUrl"
+                placeholder="https://api.fastgpt.in"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-if="specialModelType === 'fastgpt'">
+            <el-form-item label="API Key" prop="workflowApiKey">
+              <el-input
+                v-model="formPackage.workflowApiKey"
+                type="password"
+                placeholder="fk-xxxxxx"
+                show-password
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-if="specialModelType === 'fastgpt'">
+            <el-form-item label="应用标识" prop="workflowAppId">
+              <el-input
+                v-model="formPackage.workflowAppId"
+                placeholder="可选，仅用于管理后台显示"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12" v-if="specialModelType === 'fastgpt'">
+            <el-form-item label="测试连接">
+              <el-button
+                type="primary"
+                @click="testWorkflowConnection"
+                :loading="testingWorkflow"
+                :disabled="!isWorkflowConfigComplete"
+              >
+                {{ testingWorkflow ? '测试中...' : '测试连接' }}
+              </el-button>
+              <span v-if="workflowTestResult" :class="workflowTestResult.success ? 'text-success' : 'text-danger'" style="margin-left: 10px">
+                {{ workflowTestResult.message }}
+              </span>
+            </el-form-item>
+          </el-col>
+
           <el-col :span="12">
             <el-form-item label="应用图标" prop="coverImg">
               <el-input v-model="formPackage.coverImg" placeholder="填写或上传图标" clearable>
@@ -1189,6 +1465,39 @@ meta:
         </span>
       </template>
     </el-dialog>
+
+    <!-- 草稿恢复对话框 -->
+    <el-dialog
+      v-model="showDraftRestoreDialog"
+      title="检测到未保存的表单"
+      width="450px"
+      :close-on-click-modal="false"
+    >
+      <div class="draft-restore-content">
+        <p>我们检测到您有一个未保存的应用表单草稿：</p>
+        <ul class="draft-info-list">
+          <li v-if="draftData?.formPackage.name">
+            <strong>应用名称：</strong>{{ draftData?.formPackage.name }}
+          </li>
+          <li v-if="draftData?.formPackage.des">
+            <strong>应用描述：</strong>{{ draftData?.formPackage.des }}
+          </li>
+          <li v-if="draftData?.formPackage.catId && draftData?.formPackage.catId.length > 0">
+            <strong>分类数量：</strong>{{ draftData?.formPackage.catId.length }} 个
+          </li>
+          <li>
+            <strong>保存时间：</strong>{{ draftData ? new Date(draftData.timestamp).toLocaleString() : '' }}
+          </li>
+        </ul>
+        <p class="draft-restore-hint">您希望恢复此草稿吗？</p>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="ignoreDraft">忽略草稿</el-button>
+          <el-button type="primary" @click="restoreDraft">恢复草稿</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1213,5 +1522,92 @@ meta:
   .category-options .el-tag.is-disabled {
     cursor: not-allowed;
     opacity: 0.6;
+  }
+
+  /* 草稿恢复对话框样式 */
+  .draft-restore-content {
+    padding: 10px 0;
+  }
+
+  .draft-info-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+    background: #f5f7fa;
+    border-radius: 4px;
+    padding: 15px;
+  }
+
+  .draft-info-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #e4e7ed;
+    font-size: 14px;
+    color: #606266;
+  }
+
+  .draft-info-list li:last-child {
+    border-bottom: none;
+  }
+
+  .draft-info-list strong {
+    color: #303133;
+    font-weight: 500;
+    min-width: 80px;
+    display: inline-block;
+  }
+
+  .draft-restore-hint {
+    color: #409eff;
+    font-weight: 500;
+    text-align: center;
+    margin: 15px 0 0 0;
+  }
+
+  /* 操作按钮样式 - 提升可读性和点击体验 */
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .action-btn-primary {
+    color: #409eff;
+    border-color: #d9ecff;
+  }
+
+  .action-btn-primary:hover {
+    background: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+
+  .action-btn-primary:active {
+    background: #d9ecff;
+  }
+
+  .action-btn-danger {
+    color: #f56c6c;
+    border-color: #fde2e2;
+  }
+
+  .action-btn-danger:hover {
+    background: #fef0f0;
+    border-color: #f56c6c;
+    color: #f56c6c;
+  }
+
+  .action-btn-danger:active {
+    background: #fde2e2;
+  }
+
+  /* 确保按钮在表格中居中对齐 */
+  .el-table .el-table__cell {
+    padding: 12px 0;
   }
 </style>

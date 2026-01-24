@@ -237,31 +237,59 @@ export async function initDatabase() {
     Logger.log('执行数据库迁移操作', 'Database');
     await runAllMigrations();
 
-    Logger.log('数据迁移操作完成，现在执行同步确保所有新表和字段存在', 'Database');
+    Logger.log('数据迁移操作完成', 'Database');
 
-    // 先使用禁用同步的连接，确保不会重置迁移后的数据
+    // =========================================================================
+    // TypeORM Synchronize 已禁用
+    // =========================================================================
+    //
+    // 【禁用原因】
+    // 1. 已导致多次历史数据被置空的问题（modelName, model, role 等字段）
+    // 2. synchronize 在每次启动时自动执行，可能意外修改数据库
+    // 3. TypeORM 官方明确警告：synchronize 不应在生产环境使用
+    //
+    // 【问题记录】
+    // - 日期: 2026-01-24
+    // - 影响: models 表、chatlog 表的部分字段被置空
+    // - 详情: 见 docs/数据置空根本原因-TypeORM同步机制.md
+    //
+    // 【替代方案】
+    // 添加新字段时，使用 migrateColumnType() 函数或手动执行 SQL
+    //
+    // 【何时可以重新启用】
+    // 1. 项目处于初期原型阶段，没有重要历史数据
+    // 2. 需要频繁调整数据库结构
+    // 3. 可以接受数据丢失风险
+    //
+    // 【重新启用方法】
+    // 取消下方注释代码的注释，同时注释掉当前的 "禁用同步" 代码
+    // =========================================================================
+
+    // --- 当前使用：禁用同步 ---
+    // 使用禁用同步的连接，防止 synchronize 意外修改历史数据
     const dataSource = new DataSource(dataSourceOptions);
     await dataSource.initialize();
-    Logger.log('已连接到数据库，准备同步结构', 'Database');
+    Logger.log('已连接到数据库', 'Database');
 
-    // 关闭初始连接
+    // 关闭连接
     if (dataSource.isInitialized) {
       await dataSource.destroy();
     }
 
-    // 创建启用同步的连接，确保所有新表和字段被创建
-    const syncOptions: DataSourceOptions = {
-      ...dataSourceOptions,
-      synchronize: true,
-    };
-    const syncDataSource = new DataSource(syncOptions);
-    await syncDataSource.initialize();
-    Logger.log('数据库结构同步完成', 'Database');
-
-    // 关闭同步连接
-    if (syncDataSource.isInitialized) {
-      await syncDataSource.destroy();
-    }
+    // --- 以下为：启用同步（已禁用）---
+    // // 创建启用同步的连接，确保所有新表和字段被创建
+    // const syncOptions: DataSourceOptions = {
+    //   ...dataSourceOptions,
+    //   synchronize: true,
+    // };
+    // const syncDataSource = new DataSource(syncOptions);
+    // await syncDataSource.initialize();
+    // Logger.log('数据库结构同步完成', 'Database');
+    //
+    // // 关闭同步连接
+    // if (syncDataSource.isInitialized) {
+    //   await syncDataSource.destroy();
+    // }
 
     Logger.log('数据库初始化成功完成', 'Database');
   } catch (error) {

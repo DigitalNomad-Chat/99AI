@@ -5,6 +5,7 @@ const BRAND_PRIMARY = '#275bff'      // 主品牌色
 const BRAND_SECONDARY = '#409eff'    // 辅助蓝
 const BRAND_LIGHT = '#e8f0fe'        // 淡蓝背景
 const BRAND_DARK = '#1d4ed8'         // 深蓝色
+const BRAND_PALE = '#d1e9ff'         // 淡淡蓝（侧边栏选中状态）
 
 export const lightTheme = {
   'color-scheme': 'light',
@@ -48,8 +49,8 @@ export const lightTheme = {
   '--g-sub-sidebar-menu-color': '#525252',
   '--g-sub-sidebar-menu-hover-bg': BRAND_LIGHT,
   '--g-sub-sidebar-menu-hover-color': BRAND_PRIMARY,
-  '--g-sub-sidebar-menu-active-bg': BRAND_PRIMARY,
-  '--g-sub-sidebar-menu-active-color': '#ffffff',
+  '--g-sub-sidebar-menu-active-bg': BRAND_PALE,    // 侧边栏选中：淡淡蓝
+  '--g-sub-sidebar-menu-active-color': BRAND_PRIMARY, // 文字保持亮蓝
 
   // ===== 标签栏 =====
   '--g-tabbar-dividers-bg': BRAND_LIGHT,
@@ -84,6 +85,7 @@ export const darkTheme = {
   '--brand-secondary': BRAND_SECONDARY,
   '--brand-light': '#1e3a5f',  // 深色模式下的淡蓝
   '--brand-dark': BRAND_DARK,
+  '--brand-pale': '#162f4f',   // 深色模式下的淡淡蓝（侧边栏选中状态）
 
   // 内置 UI
   '--ui-primary': hex2rgba(BRAND_SECONDARY)!.join(' '),
@@ -118,8 +120,8 @@ export const darkTheme = {
   '--g-sub-sidebar-menu-color': '#9ca3af',
   '--g-sub-sidebar-menu-hover-bg': '#1e3a5f',
   '--g-sub-sidebar-menu-hover-color': BRAND_SECONDARY,
-  '--g-sub-sidebar-menu-active-bg': BRAND_SECONDARY,
-  '--g-sub-sidebar-menu-active-color': '#ffffff',
+  '--g-sub-sidebar-menu-active-bg': hex2rgba(BRAND_PRIMARY)!.join(' ').replace(/1/g, '0.15'),  // 侧边栏选中：15%透明度的品牌蓝
+  '--g-sub-sidebar-menu-active-color': BRAND_SECONDARY,
 
   // 标签栏
   '--g-tabbar-dividers-bg': '#1e3a5f',

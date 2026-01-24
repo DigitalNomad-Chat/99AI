@@ -134,7 +134,7 @@ meta:
     </PageHeader>
 
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="敏感词" prop="word">
           <ElInput
             v-model="formInline.word"
@@ -163,32 +163,32 @@ meta:
           <el-button @click="handlerReset(formRef)"> 重置 </el-button>
         </el-form-item>
       </el-form>
-    </page-main>
 
-    <page-main v-loading="loading" style="width: 100%">
-      <el-tag
-        v-for="item in badWordList"
-        :key="item.id"
-        type="warning"
-        class="mb-3 mr-3"
-        closable
-        hit
-        :disable-transitions="true"
-        @close="handleDel(item.id)"
-      >
-        {{ item.word }}
-      </el-tag>
-      <ElInput
-        v-if="inputVisible"
-        ref="InputRef"
-        v-model="inputValue"
-        class="ml-1"
-        style="width: 80px"
-        size="small"
-        @keyup.enter="handleInputConfirm"
-        @blur="handleInputConfirm"
-      />
-      <el-button v-else class="ml-1" size="small" @click="showInput"> + New Word </el-button>
+      <div v-loading="loading" class="mt-4">
+        <el-tag
+          v-for="item in badWordList"
+          :key="item.id"
+          type="warning"
+          class="mb-3 mr-3"
+          closable
+          hit
+          :disable-transitions="true"
+          @close="handleDel(item.id)"
+        >
+          {{ item.word }}
+        </el-tag>
+        <ElInput
+          v-if="inputVisible"
+          ref="InputRef"
+          v-model="inputValue"
+          class="ml-1"
+          style="width: 80px"
+          size="small"
+          @keyup.enter="handleInputConfirm"
+          @blur="handleInputConfirm"
+        />
+        <el-button v-else class="ml-1" size="small" @click="showInput"> + New Word </el-button>
+      </div>
     </page-main>
 
     <el-dialog v-model="visible" title="批量添加敏感词" width="500px" :close-on-click-modal="false">

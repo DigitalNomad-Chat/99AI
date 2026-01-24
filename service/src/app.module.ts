@@ -32,6 +32,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { UserModule } from './modules/user/user.module';
 import { UserBalanceModule } from './modules/userBalance/userBalance.module';
 import { VerificationModule } from './modules/verification/verification.module';
+import { WorkflowModule } from './modules/workflow/workflow.module';
 // global.fetch = fetch; // Disable isomorphic-fetch polyfill
 
 @Global()
@@ -95,6 +96,7 @@ import { VerificationModule } from './modules/verification/verification.module';
     ModelsModule,
     ShareModule,
     SpaModule,
+    WorkflowModule,
   ],
   providers: [
     {

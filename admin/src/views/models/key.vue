@@ -526,7 +526,7 @@ meta:
       </HButton>
     </PageHeader>
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="模型类型" prop="model">
           <el-select
             v-model="formInline.keyType"
@@ -576,9 +576,8 @@ meta:
           <el-button @click="handlerReset(formRef)"> 重置 </el-button>
         </el-form-item>
       </el-form>
-    </page-main>
-    <page-main style="width: 100%">
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="large">
+
+      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
         <el-table-column prop="keyType" label="模型类型" width="120">
           <template #default="scope">
             <el-tag type="success">
@@ -649,24 +648,18 @@ meta:
         <el-table-column prop="useToken" align="center" label="已使用Token" width="120" />
         <el-table-column prop="maxModelTokens" align="center" label="模型最大上下文" width="140">
           <template #default="scope">
-            <el-button type="info" text>
-              {{ scope.row.maxModelTokens || '-' }}
-            </el-button>
+            <span>{{ scope.row.maxModelTokens || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="max_tokens" align="center" label="模型最大回复" width="140">
           <template #default="scope">
-            <el-button type="info" text>
-              {{ scope.row.max_tokens || '-' }}
-            </el-button>
+            <span>{{ scope.row.max_tokens || '-' }}</span>
           </template>
         </el-table-column>
 
         <el-table-column prop="proxyUrl" align="center" label="绑定的代理地址" width="140">
           <template #default="scope">
-            <el-button type="info" text>
-              {{ scope.row.proxyUrl || '-' }}
-            </el-button>
+            <span style="word-break: break-all;">{{ scope.row.proxyUrl || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" align="center" label="添加时间" width="120">
@@ -674,9 +667,12 @@ meta:
             {{ utcToShanghaiTime(scope.row.createdAt, 'YYYY-MM-DD') }}
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="200">
+        <el-table-column fixed="right" label="操作" width="220" align="center">
           <template #default="scope">
-            <el-button link type="primary" size="small" @click="handleEditKey(scope.row)">
+            <el-button
+              @click="handleEditKey(scope.row)"
+              class="action-btn action-btn-primary"
+            >
               变更
             </el-button>
             <el-popconfirm
@@ -686,7 +682,9 @@ meta:
               @confirm="handleDeleteKey(scope.row)"
             >
               <template #reference>
-                <el-button link type="danger" size="small"> 删除秘钥 </el-button>
+                <el-button class="action-btn action-btn-danger">
+                  删除秘钥
+                </el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -1152,7 +1150,56 @@ meta:
   </div>
 </template>
 
-<!-- <style scoped>
+<style scoped>
+  /* 操作按钮样式 - 提升可读性和点击体验 */
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .action-btn-primary {
+    color: #409eff;
+    border-color: #d9ecff;
+  }
+
+  .action-btn-primary:hover {
+    background: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+
+  .action-btn-primary:active {
+    background: #d9ecff;
+  }
+
+  .action-btn-danger {
+    color: #f56c6c;
+    border-color: #fde2e2;
+  }
+
+  .action-btn-danger:hover {
+    background: #fef0f0;
+    border-color: #f56c6c;
+    color: #f56c6c;
+  }
+
+  .action-btn-danger:active {
+    background: #fde2e2;
+  }
+
+  /* 确保按钮在表格中居中对齐 */
+  .el-table .el-table__cell {
+    padding: 12px 0;
+  }
+
+  /* 分类选择器样式 */
   .drawing-type-grid .radio-row {
     display: flex;
     gap: 20px;
@@ -1162,4 +1209,4 @@ meta:
   .drawing-type-grid .radio-row:last-child {
     margin-bottom: 0;
   }
-</style> -->
+</style>

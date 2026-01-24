@@ -9,9 +9,12 @@
   interface TemplateField {
     id: string;
     title: string;
-    type: 'input' | 'select';
+    type: 'input' | 'select' | 'file' | 'image';
     placeholder: string;
     options?: string[];
+    isVariable?: boolean;
+    variableName?: string;
+    required?: boolean;
   }
 
   // 定义 Props 和 Emits
@@ -32,14 +35,8 @@
     set: (value) => emit('update:modelValue', value),
   });
 
-  // 监听外部 modelValue 变化，同步到本地（如果需要深度监听或特殊处理）
-  // watch(() => props.modelValue, (newValue) => {
-  //   // 可以添加深拷贝或其他逻辑
-  //   localFields.value = JSON.parse(JSON.stringify(newValue));
-  // }, { deep: true, immediate: true });
-
   // 添加新字段
-  const addField = (type: 'input' | 'select' = 'input') => {
+  const addField = (type: 'input' | 'select' | 'file' | 'image' = 'input') => {
     fields.value = [
       ...fields.value,
       {
@@ -47,7 +44,10 @@
         type,
         title: '',
         placeholder: '',
-        options: type === 'select' ? [''] : undefined, // Select 默认带一个空选项
+        options: type === 'select' ? [''] : undefined,
+        isVariable: type !== 'file' && type !== 'image', // 文件类型默认不作为变量
+        variableName: '',
+        required: false,
       },
     ];
   };
@@ -61,9 +61,8 @@
   const addOption = (fieldId: string) => {
     fields.value = fields.value.map((field) => {
       if (field.id === fieldId && field.type === 'select') {
-        // 确保 options 数组存在
         const options = field.options ? [...field.options] : [];
-        options.push(''); // 添加一个空选项
+        options.push('');
         return { ...field, options };
       }
       return field;
@@ -76,7 +75,6 @@
       if (field.id === fieldId && field.type === 'select' && field.options) {
         const options = [...field.options];
         if (options.length > 1) {
-          // 至少保留一个选项输入框
           options.splice(optionIndex, 1);
           return { ...field, options };
         } else {
@@ -88,16 +86,15 @@
   };
 
   // 更新字段类型
-  const updateFieldType = (id: string, newType: 'input' | 'select') => {
+  const updateFieldType = (id: string, newType: 'input' | 'select' | 'file' | 'image') => {
     fields.value = fields.value.map((field) => {
       if (field.id === id) {
         return {
           ...field,
           type: newType,
-          // 从 input 转 select 时，添加默认 options
           options: newType === 'select' && !field.options ? [''] : field.options,
-          // 从 select 转 input 时，移除 options (可选，也可保留)
-          // options: newType === 'input' ? undefined : field.options,
+          // 文件类型默认不作为变量
+          isVariable: (newType !== 'file' && newType !== 'image') ? field.isVariable : false,
         };
       }
       return field;
@@ -136,11 +133,52 @@
     });
   };
 
+  // 更新变量名
+  const updateVariableName = (fieldId: string, value: string) => {
+    fields.value = fields.value.map((field) => {
+      if (field.id === fieldId) {
+        return { ...field, variableName: value };
+      }
+      return field;
+    });
+  };
+
+  // 切换是否作为变量
+  const toggleIsVariable = (fieldId: string) => {
+    fields.value = fields.value.map((field) => {
+      if (field.id === fieldId) {
+        return { ...field, isVariable: !field.isVariable };
+      }
+      return field;
+    });
+  };
+
+  // 切换是否必填
+  const toggleRequired = (fieldId: string) => {
+    fields.value = fields.value.map((field) => {
+      if (field.id === fieldId) {
+        return { ...field, required: !field.required };
+      }
+      return field;
+    });
+  };
+
   // Draggable 配置
   const dragOptions = {
     animation: 200,
-    ghostClass: 'ghost', // Class name for the drop placeholder
-    handle: '.drag-handle', // Specify the handle element
+    ghostClass: 'ghost',
+    handle: '.drag-handle',
+  };
+
+  // 获取字段类型标签
+  const getFieldTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      input: '输入框',
+      select: '下拉框',
+      file: '文件上传',
+      image: '图片上传',
+    };
+    return labels[type] || type;
   };
 </script>
 
@@ -164,21 +202,30 @@
                   <el-radio-group
                     :model-value="field.type"
                     @update:modelValue="
-                      (newType) => updateFieldType(field.id, newType as 'input' | 'select')
+                      (newType) => updateFieldType(field.id, newType as 'input' | 'select' | 'file' | 'image')
                     "
                     size="small"
                   >
                     <el-radio-button label="input">输入框</el-radio-button>
                     <el-radio-button label="select">下拉框</el-radio-button>
+                    <el-radio-button label="file">文件</el-radio-button>
+                    <el-radio-button label="image">图片</el-radio-button>
                   </el-radio-group>
                   <el-button
-                    type="danger"
                     :icon="Delete"
-                    link
-                    class="ml-auto !p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    class="ml-auto field-delete-btn"
                     @click="removeField(field.id)"
                   />
                 </div>
+
+                <!-- 显示当前字段类型 -->
+                <div class="mb-2">
+                  <el-tag size="small" :type="field.type === 'input' ? 'primary' : field.type === 'select' ? 'success' : 'warning'">
+                    {{ getFieldTypeLabel(field.type) }}
+                  </el-tag>
+                  <el-tag v-if="field.required" size="small" type="danger" class="ml-1">必填</el-tag>
+                </div>
+
                 <el-form-item label="字段名称 (Title / Label)">
                   <el-input
                     :model-value="field.title"
@@ -187,6 +234,7 @@
                     clearable
                   />
                 </el-form-item>
+
                 <el-form-item label="提示文字 (Placeholder)">
                   <el-input
                     :model-value="field.placeholder"
@@ -195,6 +243,37 @@
                     clearable
                   />
                 </el-form-item>
+
+                <!-- 工作流变量配置 - 仅对非文件类型显示 -->
+                <template v-if="field.type !== 'file' && field.type !== 'image'">
+                  <el-form-item label="作为工作流变量">
+                    <el-switch
+                      :model-value="field.isVariable"
+                      @change="() => toggleIsVariable(field.id)"
+                      active-text="是"
+                      inactive-text="否"
+                    />
+                  </el-form-item>
+                  <el-form-item v-if="field.isVariable" label="变量名">
+                    <el-input
+                      :model-value="field.variableName"
+                      @update:modelValue="(val) => updateVariableName(field.id, val)"
+                      placeholder="例如：userName"
+                      clearable
+                    />
+                    <div class="text-xs text-gray-500 mt-1">变量名将传递给工作流平台</div>
+                  </el-form-item>
+                </template>
+
+                <!-- 必填选项 -->
+                <el-form-item label="必填">
+                  <el-switch
+                    :model-value="field.required"
+                    @change="() => toggleRequired(field.id)"
+                  />
+                </el-form-item>
+
+                <!-- 下拉框选项配置 -->
                 <div v-if="field.type === 'select'">
                   <el-form-item label="下拉选项">
                     <div class="space-y-2 w-full">
@@ -213,10 +292,8 @@
                         />
                         <el-button
                           :icon="Delete"
-                          type="danger"
-                          link
                           size="small"
-                          class="!p-1"
+                          class="option-delete-btn"
                           :disabled="field.options && field.options.length <= 1"
                           @click="removeOption(field.id, index)"
                         />
@@ -233,6 +310,23 @@
                     </div>
                   </el-form-item>
                 </div>
+
+                <!-- 文件上传说明 -->
+                <div v-if="field.type === 'file' || field.type === 'image'">
+                  <el-alert
+                    :title="field.type === 'file' ? '文件上传字段' : '图片上传字段'"
+                    type="info"
+                    :closable="false"
+                    show-icon
+                  >
+                    <template #default>
+                      <div class="text-xs">
+                        <p>• 文件将上传到99AI服务器后传递给工作流</p>
+                        <p>• 支持格式: {{ field.type === 'file' ? 'PDF, DOC, TXT, MD等' : 'JPG, PNG, GIF, WEBP' }}</p>
+                      </div>
+                    </template>
+                  </el-alert>
+                </div>
               </el-form>
             </div>
           </div>
@@ -240,11 +334,55 @@
       </template>
     </draggable>
 
-    <div class="mt-4 flex justify-center space-x-2">
-      <el-button :icon="Plus" type="primary" plain @click="addField('input')">添加输入框</el-button>
-      <el-button :icon="Plus" type="success" plain @click="addField('select')"
-        >添加下拉框</el-button
+    <!-- 添加按钮组 - 统一视觉语言 -->
+    <div class="field-actions">
+      <button
+        class="action-btn action-btn-input"
+        @click="addField('input')"
       >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span class="btn-text">输入框</span>
+        <span class="btn-type-hint type-input"></span>
+      </button>
+
+      <button
+        class="action-btn action-btn-select"
+        @click="addField('select')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span class="btn-text">下拉框</span>
+        <span class="btn-type-hint type-select"></span>
+      </button>
+
+      <button
+        class="action-btn action-btn-file"
+        @click="addField('file')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span class="btn-text">文件上传</span>
+        <span class="btn-type-hint type-file"></span>
+      </button>
+
+      <button
+        class="action-btn action-btn-image"
+        @click="addField('image')"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span class="btn-text">图片上传</span>
+        <span class="btn-type-hint type-image"></span>
+      </button>
     </div>
   </div>
 </template>
@@ -295,5 +433,348 @@
   }
   :deep(.el-form-item) {
     margin-bottom: 10px;
+  }
+
+  /* ========================================
+     Refined Delete Button Styles
+     设计理念：精致专业 - 微交互传达意图
+     ======================================== */
+
+  /* 字段卡片删除按钮 - 主要操作 */
+  .field-delete-btn {
+    /* 基础样式 - 低调但可发现 */
+    --btn-delete-default: #9ca3af;
+    --btn-delete-hover: #dc2626;
+    --btn-delete-bg-hover: #fef2f2;
+    --btn-delete-active: #b91c1c;
+    --btn-delete-bg-active: #fee2e2;
+
+    color: var(--btn-delete-default);
+    background: transparent;
+    border: none;
+    padding: 8px 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    /* 默认隐藏，悬停卡片时显示 */
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+
+  /* 卡片悬停时显示按钮 */
+  .field-item:hover .field-delete-btn {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* 悬停状态 - 精致的红色过渡 */
+  .field-delete-btn:hover {
+    color: var(--btn-delete-hover);
+    background: var(--btn-delete-bg-hover);
+    transform: scale(1.08);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);
+  }
+
+  /* 图标微动画 - 倾斜传达删除意图 */
+  .field-delete-btn:hover :deep(.el-icon) {
+    transform: rotate(-8deg) scale(1.05);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* 激活/按下状态 */
+  .field-delete-btn:active {
+    color: var(--btn-delete-active);
+    background: var(--btn-delete-bg-active);
+    transform: scale(0.95);
+    box-shadow: 0 1px 4px rgba(220, 38, 38, 0.2);
+  }
+
+  /* 禁用状态 */
+  .field-delete-btn:disabled {
+    color: #d1d5db;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* 选项删除按钮 - 次要操作 */
+  .option-delete-btn {
+    --option-delete-default: #9ca3af;
+    --option-delete-hover: #ef4444;
+    --option-delete-bg-hover: #fef2f2;
+    --option-delete-active: #dc2626;
+
+    color: var(--option-delete-default);
+    background: transparent;
+    border: none;
+    padding: 6px 8px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .option-delete-btn:hover:not(:disabled) {
+    color: var(--option-delete-hover);
+    background: var(--option-delete-bg-hover);
+    transform: scale(1.1);
+  }
+
+  .option-delete-btn:hover:not(:disabled) :deep(.el-icon) {
+    transform: rotate(-5deg);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .option-delete-btn:active:not(:disabled) {
+    color: var(--option-delete-active);
+    transform: scale(0.95);
+  }
+
+  .option-delete-btn:disabled {
+    color: #e5e7eb;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* 添加按钮的精致样式 - 统一视觉语言 */
+  .el-button:has(.el-icon.Plus):has(.el-icon.Delete) {
+    font-weight: 500;
+  }
+
+  /* ========================================
+     Field Action Buttons - Refined Design
+     设计理念：统一品牌色 + 图标差异化 + 微妙类型提示
+     ======================================== */
+
+  .field-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+
+  /* 基础按钮样式 - 统一品牌蓝色 */
+  .action-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #275bff;
+    background: #ffffff;
+    border: 1.5px solid #e8f0fe;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    outline: none;
+    overflow: hidden;
+  }
+
+  /* 类型提示标记 - 默认隐藏 */
+  .btn-type-hint {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 0 10px 0 8px;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* 悬停状态 - 统一动画 */
+  .action-btn:hover {
+    border-color: #275bff;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 91, 255, 0.15);
+  }
+
+  /* 悬停时显示类型提示 */
+  .action-btn:hover .btn-type-hint {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* SVG 图标样式 */
+  .action-btn svg {
+    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .action-btn:hover svg {
+    transform: rotate(90deg);
+  }
+
+  /* 按钮文字 */
+  .action-btn .btn-text {
+    letter-spacing: 0.3px;
+  }
+
+  /* 激活状态 */
+  .action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(39, 91, 255, 0.2);
+  }
+
+  /* 焦点状态 - 可访问性 */
+  .action-btn:focus-visible {
+    outline: 2px solid #275bff;
+    outline-offset: 2px;
+  }
+
+  /* ========================================
+     类型专属样式 - 微妙的颜色差异
+     ======================================== */
+
+  /* 输入框 - 蓝色 */
+  .action-btn-input .btn-type-hint.type-input {
+    background: linear-gradient(135deg, #275bff, #1d4ed8);
+  }
+
+  .action-btn-input:hover {
+    border-color: #275bff;
+    box-shadow: 0 4px 12px rgba(39, 91, 255, 0.2);
+  }
+
+  /* 下拉框 - 绿色 */
+  .action-btn-select .btn-type-hint.type-select {
+    background: linear-gradient(135deg, #10b981, #059669);
+  }
+
+  .action-btn-select:hover {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #f0fdf4, #ffffff);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  }
+
+  .action-btn-select:hover svg {
+    color: #10b981;
+  }
+
+  /* 文件上传 - 橙色 */
+  .action-btn-file .btn-type-hint.type-file {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+  }
+
+  .action-btn-file:hover {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb, #ffffff);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  }
+
+  .action-btn-file:hover svg {
+    color: #f59e0b;
+  }
+
+  /* 图片上传 - 紫色 */
+  .action-btn-image .btn-type-hint.type-image {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  }
+
+  .action-btn-image:hover {
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, #f5f3ff, #ffffff);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+  }
+
+  .action-btn-image:hover svg {
+    color: #8b5cf6;
+  }
+
+  /* ========================================
+     响应式设计
+     ======================================== */
+
+  @media (max-width: 768px) {
+    .field-actions {
+      gap: 8px;
+    }
+
+    .action-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+    }
+
+    .action-btn .btn-text {
+      /* 移动端保持文字显示 */
+    }
+  }
+
+  @media (max-width: 480px) {
+    .field-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .action-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  /* ========================================
+     暗色模式支持
+     ======================================== */
+
+  @media (prefers-color-scheme: dark) {
+    .action-btn {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    .action-btn:hover {
+      background: #1e3a5f;
+      border-color: #409eff;
+    }
+
+    .action-btn-input:hover {
+      background: linear-gradient(135deg, #1e3a5f, #0f172a);
+    }
+
+    .action-btn-select:hover {
+      background: linear-gradient(135deg, #14532d, #0f172a);
+      border-color: #10b981;
+    }
+
+    .action-btn-file:hover {
+      background: linear-gradient(135deg, #451a03, #0f172a);
+      border-color: #f59e0b;
+    }
+
+    .action-btn-image:hover {
+      background: linear-gradient(135deg, #2e1065, #0f172a);
+      border-color: #8b5cf6;
+    }
+  }
+
+  /* ========================================
+     减少动画模式
+     ======================================== */
+
+  @media (prefers-reduced-motion: reduce) {
+    .action-btn {
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .action-btn:hover {
+      transform: none;
+    }
+
+    .action-btn:hover svg {
+      transform: none;
+    }
+
+    .btn-type-hint {
+      transition: opacity 0.15s ease;
+    }
   }
 </style>

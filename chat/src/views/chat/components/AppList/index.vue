@@ -2,7 +2,6 @@
 import { fetchCollectAppAPI, fetchQueryAppCatsAPI, fetchQueryAppsAPI } from '@/api/appStore'
 // import { fetchQueryMenuAPI } from '@/api/config';
 import type { ResData } from '@/api/types'
-// 移除DynamicFormModal组件的导入
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { t } from '@/locales'
 import { useAppCatStore, useAuthStoreWithout, useChatStore, useGlobalStoreWithOut } from '@/store'
@@ -11,13 +10,17 @@ import { message } from '@/utils/message'
 import { Left, Right, Search, Star, VipOne } from '@icon-park/vue-next'
 import PinyinMatch from 'pinyin-match'
 import { computed, inject, onMounted, ref, watch } from 'vue'
+import WorkflowConfigModal from '@/components/WorkflowConfigModal/index.vue'
 
 // 接口定义
 interface FormField {
-  type: 'input' | 'select'
+  type: 'input' | 'select' | 'file' | 'image'
   title: string
   placeholder: string
   options?: string[]
+  isVariable?: boolean
+  variableName?: string
+  required?: boolean
 }
 
 interface App {
@@ -34,6 +37,7 @@ interface App {
   catName?: string
   backgroundImg?: string
   prompt?: string
+  appType?: number
 }
 
 interface AppCat {
@@ -69,6 +73,11 @@ const showAppConfigModal = inject('showAppConfigModal') as
 const tryParseJson = inject('tryParseJson') as
   | ((jsonString: string | undefined | null) => FormField[] | null)
   | undefined
+
+// 工作流配置弹窗状态
+const showWorkflowModal = ref(false)
+const currentWorkflowApp = ref<App | null>(null)
+const workflowFormSchema = ref<FormField[]>([])
 
 // Define emits
 const emit = defineEmits(['run-app', 'show-member-dialog', 'run-app-with-data'])
@@ -135,7 +144,33 @@ async function handleRunApp(app: App) {
     }
   }
 
-  // 检查是否有配置弹窗功能
+  // 优先检查是否是工作流应用
+  if (isWorkflowApp(app)) {
+    console.log('检测到工作流应用:', app.name, 'appType:', app.appType)
+
+    // 解析配置模板
+    const formSchema = tryParseJson ? tryParseJson(app.prompt) : null
+
+    // 工作流应用必须有配置模板
+    if (formSchema && formSchema.length > 0) {
+      console.log('显示工作流配置弹窗，表单字段:', formSchema)
+      currentWorkflowApp.value = app
+      workflowFormSchema.value = formSchema
+      showWorkflowModal.value = true
+      return
+    } else if (formSchema && formSchema.length === 0) {
+      // 无需配置的工作流，直接运行
+      console.log('工作流无需配置，直接运行')
+      emit('run-app', app)
+      return
+    } else {
+      // 工作流应用但没有配置模板，提示管理员
+      ms.warning('此工作流应用配置不完整，请联系管理员')
+      return
+    }
+  }
+
+  // 检查是否有配置弹窗功能（智能体应用）
   console.log('=== AppList应用启动调试 ===')
   console.log('点击的应用数据:', app)
   console.log('应用prompt字段:', app.prompt)
@@ -161,6 +196,31 @@ async function handleRunApp(app: App) {
   // 如果没有配置或没有inject到方法，直接运行应用
   console.log('AppList直接运行应用，没有配置弹窗')
   emit('run-app', app)
+}
+
+// 处理工作流配置提交
+function handleWorkflowSubmit(data: Record<string, string | File>) {
+  console.log('工作流配置提交:', data)
+
+  // 关闭弹窗
+  showWorkflowModal.value = false
+
+  // 发送运行事件，附带配置数据
+  emit('run-app-with-data', {
+    app: currentWorkflowApp.value,
+    config: data
+  })
+
+  // 重置状态
+  currentWorkflowApp.value = null
+  workflowFormSchema.value = []
+}
+
+// 关闭工作流弹窗
+function handleWorkflowClose() {
+  showWorkflowModal.value = false
+  currentWorkflowApp.value = null
+  workflowFormSchema.value = []
 }
 
 async function queryCats() {
@@ -228,6 +288,20 @@ function handleClickCategoryTag(catName: string) {
 function isMemberCategory(catName: string): boolean {
   const category = catList.value.find(cat => cat.name === catName)
   return category ? category.isMember === 1 : false
+}
+
+function getWorkflowTypeName(appType: number): string {
+  const typeMap: Record<number, string> = {
+    0: '',
+    1: 'FastGPT',
+    2: 'Dify',
+    3: 'n8n',
+  }
+  return typeMap[appType] || ''
+}
+
+function isWorkflowApp(app: App): boolean {
+  return (app.appType || 0) > 0
 }
 
 onMounted(() => {
@@ -361,11 +435,20 @@ onMounted(() => {
             <div
               class="flex items-center justify-between font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5"
             >
-              <span
-                class="line-clamp-1 overflow-hidden text-ellipsis block flex-grow mr-2 whitespace-nowrap"
-              >
-                {{ item.name }}
-              </span>
+              <div class="flex items-center gap-2 flex-grow mr-2">
+                <span
+                  class="line-clamp-1 overflow-hidden text-ellipsis block whitespace-nowrap"
+                >
+                  {{ item.name }}
+                </span>
+                <!-- 工作流类型标识 -->
+                <span
+                  v-if="isWorkflowApp(item)"
+                  class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300 flex-shrink-0"
+                >
+                  {{ getWorkflowTypeName(item.appType || 0) }}
+                </span>
+              </div>
               <Star
                 :theme="isMineApp(item) ? 'filled' : 'outline'"
                 size="16"
@@ -403,6 +486,15 @@ onMounted(() => {
         </div>
       </transition-group>
     </div>
+
+    <!-- 工作流配置弹窗 -->
+    <WorkflowConfigModal
+      v-if="showWorkflowModal && currentWorkflowApp"
+      :app="currentWorkflowApp"
+      :formSchema="workflowFormSchema"
+      @submit="handleWorkflowSubmit"
+      @close="handleWorkflowClose"
+    />
   </div>
 </template>
 

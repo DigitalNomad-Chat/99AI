@@ -197,13 +197,107 @@ export class ModelsService {
       }
       const { id } = params;
       if (id) {
-        const res = await this.modelsEntity.update({ id }, params);
+        // 查询当前数据，用于保护字段
+        const curModel = await this.modelsEntity.findOne({ where: { id } });
+        if (!curModel) {
+          throw new HttpException('模型不存在！', HttpStatus.BAD_REQUEST);
+        }
+
+        // 保护字段 - 只更新明确传递的字段，防止未传递字段被置空
+        const updateData = { ...params } as any;
+
+        // 关键字段保护：只在这些字段是 undefined 时才使用数据库中的值
+        // modelName 和 model 是必填字段，但如果前端传了空字符串，需要用默认值
+        updateData.modelName = updateData.modelName || curModel.modelName || '默认模型';
+        updateData.model = updateData.model || curModel.model || 'gpt-3.5-turbo';
+
+        // 其他可选字段：undefined 时保留原值，空字符串时允许清空
+        updateData.modelAvatar =
+          updateData.modelAvatar !== undefined ? updateData.modelAvatar : curModel.modelAvatar;
+        updateData.modelDescription =
+          updateData.modelDescription !== undefined
+            ? updateData.modelDescription
+            : curModel.modelDescription;
+        updateData.systemPrompt =
+          updateData.systemPrompt !== undefined ? updateData.systemPrompt : curModel.systemPrompt;
+        updateData.proxyUrl =
+          updateData.proxyUrl !== undefined ? updateData.proxyUrl : curModel.proxyUrl;
+
+        // 数字字段处理
+        updateData.maxModelTokens = isNaN(Number(updateData.maxModelTokens))
+          ? curModel.maxModelTokens || 64000
+          : updateData.maxModelTokens;
+        updateData.max_tokens = isNaN(Number(updateData.max_tokens))
+          ? curModel.max_tokens || 4096
+          : updateData.max_tokens;
+        updateData.timeout = isNaN(Number(updateData.timeout))
+          ? curModel.timeout || 300
+          : updateData.timeout;
+        updateData.modelOrder = isNaN(Number(updateData.modelOrder))
+          ? curModel.modelOrder || 0
+          : updateData.modelOrder;
+        updateData.deduct = isNaN(Number(updateData.deduct))
+          ? curModel.deduct || 1
+          : updateData.deduct;
+        updateData.deductType = isNaN(Number(updateData.deductType))
+          ? curModel.deductType || 1
+          : updateData.deductType;
+        updateData.deductDeepThink = isNaN(Number(updateData.deductDeepThink))
+          ? curModel.deductDeepThink || 1
+          : updateData.deductDeepThink;
+        updateData.maxRounds = isNaN(Number(updateData.maxRounds))
+          ? curModel.maxRounds || 12
+          : updateData.maxRounds;
+        updateData.tokenFeeRatio = isNaN(Number(updateData.tokenFeeRatio))
+          ? curModel.tokenFeeRatio || 0
+          : updateData.tokenFeeRatio;
+        updateData.modelLimits = isNaN(Number(updateData.modelLimits))
+          ? curModel.modelLimits || 999
+          : updateData.modelLimits;
+
+        // 布尔字段处理
+        updateData.status = updateData.status !== undefined ? updateData.status : curModel.status;
+        updateData.isTokenBased =
+          updateData.isTokenBased !== undefined ? updateData.isTokenBased : curModel.isTokenBased;
+        updateData.isNetworkSearch =
+          updateData.isNetworkSearch !== undefined
+            ? updateData.isNetworkSearch
+            : curModel.isNetworkSearch;
+        updateData.isMcpTool =
+          updateData.isMcpTool !== undefined ? updateData.isMcpTool : curModel.isMcpTool;
+
+        // 数字枚举字段处理
+        updateData.isFileUpload = isNaN(Number(updateData.isFileUpload))
+          ? curModel.isFileUpload || 0
+          : updateData.isFileUpload;
+        updateData.isImageUpload = isNaN(Number(updateData.isImageUpload))
+          ? curModel.isImageUpload || 0
+          : updateData.isImageUpload;
+        updateData.deepThinkingType = isNaN(Number(updateData.deepThinkingType))
+          ? curModel.deepThinkingType || 0
+          : updateData.deepThinkingType;
+        updateData.systemPromptType = isNaN(Number(updateData.systemPromptType))
+          ? curModel.systemPromptType || 0
+          : updateData.systemPromptType;
+        updateData.drawingType = isNaN(Number(updateData.drawingType))
+          ? curModel.drawingType || 0
+          : updateData.drawingType;
+
+        const res = await this.modelsEntity.update({ id }, updateData);
         await this.initCalcKey();
         return res.affected > 0;
       } else {
         const { keyType, key } = params;
         if (Number(keyType !== 1)) {
-          const res = await this.modelsEntity.save(params);
+          // 添加字段保护，确保关键字段不为空（HMR 重置保护）
+          const saveData = {
+            ...params,
+            modelName: params.modelName || params.model || '默认模型',
+            model: params.model || 'gpt-3.5-turbo',
+            keyType: params.keyType !== undefined ? params.keyType : 0,
+            status: params.status !== undefined ? params.status : 1,
+          };
+          const res = await this.modelsEntity.save(saveData);
           await this.initCalcKey();
           return res;
         } else {

@@ -163,7 +163,7 @@ meta:
       </template>
     </PageHeader>
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="用户名称" prop="username">
           <el-input v-model="formInline.username" placeholder="用户姓名[模糊搜索]" clearable />
         </el-form-item>
@@ -196,10 +196,8 @@ meta:
           <el-button @click="handlerReset(formRef)"> 重置 </el-button>
         </el-form-item>
       </el-form>
-    </page-main>
 
-    <page-main style="width: 100%">
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="large">
+      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
         <el-table-column prop="avatar" label="用户头像" fixed width="120">
           <template #default="scope">
             <el-avatar :src="scope.row.avatar" />
@@ -334,23 +332,25 @@ meta:
             {{ utcToShanghaiTime(scope.row.createdAt, 'YYYY-MM-DD hh:mm:ss') }}
           </template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="250" align="center">
+        <el-table-column fixed="right" label="操作" min-width="340" align="center">
           <template #default="scope">
-            <el-button link type="primary" size="small" @click="handleUpdateStatus(scope.row)">
-              修改状态
-            </el-button>
-            <el-popconfirm
-              title="确认重置此用户密码为【123456】?"
-              confirm-button-text="确认重置"
-              @confirm="handlerResetUserPass(scope.row)"
-            >
-              <template #reference>
-                <el-button link type="danger"> 重置密码 </el-button>
-              </template>
-            </el-popconfirm>
-            <el-button link type="primary" size="small" @click="handleSendCrami(scope.row)">
-              调整积分
-            </el-button>
+            <div class="action-buttons-wrapper">
+              <el-button class="action-btn action-btn-primary" @click="handleUpdateStatus(scope.row)">
+                修改状态
+              </el-button>
+              <el-popconfirm
+                title="确认重置此用户密码为【123456】?"
+                confirm-button-text="确认重置"
+                @confirm="handlerResetUserPass(scope.row)"
+              >
+                <template #reference>
+                  <el-button class="action-btn action-btn-danger"> 重置密码 </el-button>
+                </template>
+              </el-popconfirm>
+              <el-button class="action-btn action-btn-primary" @click="handleSendCrami(scope.row)">
+                调整积分
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -447,3 +447,63 @@ meta:
     </el-dialog>
   </div>
 </template>
+
+<style scoped>
+  /* 操作按钮容器 - 确保按钮在一行显示 */
+  .action-buttons-wrapper {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  /* 操作按钮样式 - 提升可读性和点击体验 */
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .action-btn-primary {
+    color: #409eff;
+    border-color: #d9ecff;
+  }
+
+  .action-btn-primary:hover {
+    background: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+
+  .action-btn-primary:active {
+    background: #d9ecff;
+  }
+
+  .action-btn-danger {
+    color: #f56c6c;
+    border-color: #fde2e2;
+  }
+
+  .action-btn-danger:hover {
+    background: #fef0f0;
+    border-color: #f56c6c;
+    color: #f56c6c;
+  }
+
+  .action-btn-danger:active {
+    background: #fde2e2;
+  }
+
+  /* 确保按钮在表格中居中对齐 */
+  .el-table .el-table__cell {
+    padding: 12px 0;
+  }
+</style>

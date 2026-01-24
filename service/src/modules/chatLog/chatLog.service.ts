@@ -35,7 +35,14 @@ export class ChatLogService {
 
   /* 记录问答日志 */
   async saveChatLog(logInfo): Promise<any> {
-    const savedLog = await this.chatLogEntity.save(logInfo);
+    // 添加字段保护，确保关键字段不为空
+    const saveData = {
+      ...logInfo,
+      model: logInfo.model || 'gpt-3.5-turbo',
+      modelName: logInfo.modelName || logInfo.model || 'AI',
+      role: logInfo.role || 'assistant',
+    };
+    const savedLog = await this.chatLogEntity.save(saveData);
     return savedLog; // 这里返回保存后的实体，包括其 ID
   }
 

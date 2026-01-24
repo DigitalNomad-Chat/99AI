@@ -213,7 +213,7 @@ meta:
       <el-alert :closable="false" show-icon title="卡密说明" description="" type="success" />
     </page-main> -->
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="用户名称" prop="useId">
           <el-select
             v-model="formInline.useId"
@@ -256,15 +256,14 @@ meta:
         </el-form-item>
         <div style="float: right"></div>
       </el-form>
-    </page-main>
 
-    <page-main style="width: 100%">
       <el-table
         v-loading="loading"
         border
         :data="tableData"
         style="width: 100%"
-        size="large"
+        size="default"
+        class="mt-4"
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
@@ -307,7 +306,7 @@ meta:
               @confirm="handleDeleteCrami(scope.row)"
             >
               <template #reference>
-                <el-button link type="danger" size="small"> 删除卡密 </el-button>
+                <el-button class="action-btn action-btn-danger"> 删除卡密 </el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -403,3 +402,53 @@ meta:
     </el-dialog>
   </div>
 </template>
+
+<style scoped>
+  /* 操作按钮样式 - 提升可读性和点击体验 */
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .action-btn-primary {
+    color: #409eff;
+    border-color: #d9ecff;
+  }
+
+  .action-btn-primary:hover {
+    background: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+
+  .action-btn-primary:active {
+    background: #d9ecff;
+  }
+
+  .action-btn-danger {
+    color: #f56c6c;
+    border-color: #fde2e2;
+  }
+
+  .action-btn-danger:hover {
+    background: #fef0f0;
+    border-color: #f56c6c;
+    color: #f56c6c;
+  }
+
+  .action-btn-danger:active {
+    background: #fde2e2;
+  }
+
+  /* 确保按钮在表格中居中对齐 */
+  .el-table .el-table__cell {
+    padding: 12px 0;
+  }
+</style>

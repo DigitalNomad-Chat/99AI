@@ -99,6 +99,17 @@ export class AppService {
     };
   }
 
+  /**
+   * 查询单个应用的完整信息（包含工作流配置字段）
+   */
+  async queryOneApp(id: number) {
+    const app = await this.appEntity.findOne({ where: { id } });
+    if (!app) {
+      throw new HttpException('应用不存在！', HttpStatus.BAD_REQUEST);
+    }
+    return app;
+  }
+
   async appCatsList(query: QuerCatsDto, req?: Request) {
     const { page = 1, size = 10, name, status } = query;
     const where: any = {};

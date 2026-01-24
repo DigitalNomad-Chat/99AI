@@ -102,7 +102,7 @@ meta:
       </template>
     </PageHeader>
     <page-main>
-      <el-form ref="formRef" :inline="true" :model="formInline">
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="用户名称" prop="userId">
           <el-select
             v-model="formInline.userId"
@@ -143,10 +143,8 @@ meta:
           <el-button @click="handlerReset(formRef)"> 重置 </el-button>
         </el-form-item>
       </el-form>
-    </page-main>
 
-    <page-main style="width: 100%">
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="large">
+      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
         <el-table-column prop="avatar" label="用户头像" width="120" fixed>
           <template #default="scope">
             <el-avatar :src="scope.row.avatar" />

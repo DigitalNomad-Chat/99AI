@@ -162,9 +162,22 @@ export class ChatService {
 
     /* 获取模型配置及预设设置 */
     if (appInfo) {
-      const { isGPTs, gizmoID, name, isFixedModel, appModel, coverImg } = appInfo;
+      const { isGPTs, gizmoID, name, isFixedModel, appModel, coverImg, appType } = appInfo;
       useModelAvatar = coverImg;
       appName = name;
+
+      // 检查是否是工作流应用
+      if (appType && appType > 0) {
+        Logger.log(`检测到工作流应用: ${name} (appType: ${appType})`, 'ChatService');
+        // 工作流应用的处理逻辑
+        // 注意：这里需要注入WorkflowService来处理工作流调用
+        // 暂时记录日志，实际调用需要在后续步骤中实现
+        Logger.debug(
+          `工作流应用配置: appType=${appType}, workflowApiUrl=${appInfo.workflowApiUrl}`,
+          'ChatService',
+        );
+      }
+
       if (isGPTs) {
         currentRequestModelKey = await this.modelsService.getCurrentModelKeyInfo('gpts');
         currentRequestModelKey.model = `gpt-4-gizmo-${gizmoID}`;
@@ -376,7 +389,7 @@ export class ChatService {
     );
 
     // 整理对话参数
-    const useModeName = modelName;
+    const useModeName = modelName || model || 'AI';
     const proxyResUrl = formatUrl(proxyUrl || openaiBaseUrl || 'https://api.openai.com');
 
     const modelKey = key || openaiBaseKey;

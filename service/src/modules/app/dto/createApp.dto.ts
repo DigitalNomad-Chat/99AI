@@ -108,4 +108,53 @@ export class CreateAppDto {
     required: false,
   })
   flowithKey: string;
+
+  @ApiProperty({
+    example: 0,
+    description: '应用类型: 0-智能体 1-FastGPT工作流 2-Dify工作流 3-n8n工作流',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: '应用类型必须是Number' })
+  appType: number;
+
+  @ApiProperty({
+    example: 'https://api.fastgpt.in',
+    description: '工作流API地址',
+    required: false,
+  })
+  @IsOptional()
+  workflowApiUrl: string;
+
+  @ApiProperty({
+    example: 'fk-xxxxxx',
+    description: '工作流API Key',
+    required: false,
+  })
+  @IsOptional()
+  workflowApiKey: string;
+
+  @ApiProperty({
+    example: 'workflow-app-id',
+    description: '工作流AppId/FlowId',
+    required: false,
+  })
+  @IsOptional()
+  workflowAppId: string;
+
+  @ApiProperty({
+    example: 'App背景图',
+    description: 'App背景图',
+    required: false,
+  })
+  @IsOptional()
+  backgroundImg: string;
+
+  @ApiProperty({
+    example: '[{"type":"input","title":"用户名","placeholder":"请输入用户名"}]',
+    description: 'App提问模版/工作流变量配置(JSON格式)',
+    required: false,
+  })
+  @IsOptional()
+  prompt: string;
 }

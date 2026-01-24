@@ -122,8 +122,8 @@ meta:
         <div class="flex items-center gap-4">订单列表</div>
       </template>
     </PageHeader>
-    <page-main class="flex items-start justify-between">
-      <el-form ref="formRef" :inline="true" :model="formInline">
+    <page-main>
+      <el-form ref="formRef" :inline="true" :model="formInline" class="mb-4">
         <el-form-item label="用户名称" prop="userId">
           <el-select
             v-model="formInline.userId"
@@ -186,7 +186,7 @@ meta:
           </el-popconfirm>
         </el-form-item>
       </el-form>
-      <el-statistic title="累计已支付订单金额" :value="totalPrice" />
+      <el-statistic class="mt-4" title="累计已支付订单金额" :value="totalPrice" />
     </page-main>
 
     <page-main style="width: 100%">
@@ -195,7 +195,8 @@ meta:
         border
         :data="tableData"
         style="width: 100%"
-        size="large"
+        size="default"
+        class="mt-4"
         :tooltip-options="{}"
       >
         <el-table-column fixed prop="orderId" label="订单ID" width="315" />
@@ -231,7 +232,7 @@ meta:
               @confirm="handleDeleteOrder(scope.row)"
             >
               <template #reference>
-                <el-button link type="danger" size="small" :loading="delLoading">
+                <el-button class="action-btn action-btn-danger" :loading="delLoading">
                   删除订单
                 </el-button>
               </template>
@@ -255,7 +256,55 @@ meta:
   </div>
 </template>
 
-<style>
+<style scoped>
+  /* 操作按钮样式 - 提升可读性和点击体验 */
+  .action-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  .action-btn-primary {
+    color: #409eff;
+    border-color: #d9ecff;
+  }
+
+  .action-btn-primary:hover {
+    background: #ecf5ff;
+    border-color: #409eff;
+    color: #409eff;
+  }
+
+  .action-btn-primary:active {
+    background: #d9ecff;
+  }
+
+  .action-btn-danger {
+    color: #f56c6c;
+    border-color: #fde2e2;
+  }
+
+  .action-btn-danger:hover {
+    background: #fef0f0;
+    border-color: #f56c6c;
+    color: #f56c6c;
+  }
+
+  .action-btn-danger:active {
+    background: #fde2e2;
+  }
+
+  /* 确保按钮在表格中居中对齐 */
+  .el-table .el-table__cell {
+    padding: 12px 0;
+  }
+
   .prompt,
   .answer {
     width: 100%;

@@ -65,4 +65,16 @@ export class AppEntity extends BaseEntity {
 
   @Column({ comment: 'App提问模版', nullable: true, type: 'text' })
   prompt: string;
+
+  @Column({ comment: '应用类型: 0-智能体 1-FastGPT工作流 2-Dify工作流 3-n8n工作流', default: 0 })
+  appType: number;
+
+  @Column({ comment: '工作流API地址', nullable: true, type: 'text' })
+  workflowApiUrl: string;
+
+  @Column({ comment: '工作流API Key', nullable: true, type: 'text' })
+  workflowApiKey: string;
+
+  @Column({ comment: '工作流AppId/FlowId', nullable: true, type: 'text' })
+  workflowAppId: string;
 }
