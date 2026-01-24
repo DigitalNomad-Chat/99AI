@@ -325,130 +325,77 @@ meta:
 <template>
   <div class="p-4 h-[90vh] overflow-hidden">
     <!-- 主要内容区域 -->
-    <div class="flex gap-5 h-full">
-      <!-- 左侧：更新日志 + 问题反馈 -->
-      <div class="flex-1 flex flex-col gap-4 min-w-0">
-        <!-- 更新日志 -->
-        <div
-          class="flex-[4] bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col overflow-hidden"
-        >
+    <div class="flex flex-col gap-4 h-full">
+      <!-- 统计卡片 -->
+      <div class="grid grid-cols-2 grid-rows-2 gap-4 h-55">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
           <div
-            class="flex justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
+            class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-indigo-500 to-purple-600"
           >
-            <span class="text-base font-semibold text-gray-800 dark:text-gray-200">项目说明</span>
-            <span
-              class="text-xs text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded"
-              >{{ pkg.version }}</span
-            >
+            <el-icon><User /></el-icon>
           </div>
-          <div
-            class="flex-1 p-5 overflow-y-auto overflow-x-hidden markdown-body hide-h1"
-            v-html="changelogHtml"
-          ></div>
+          <div class="flex-1">
+            <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日新增用户</div>
+            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
+              {{ baseInfo?.newUserCount || 0 }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-500">
+              总计: {{ baseInfo.userCount || 0 }}
+            </div>
+          </div>
         </div>
 
-        <!-- 问题反馈 -->
-        <div class="h-20 flex justify-start">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
           <div
-            class="w-full h-full bg-white dark:bg-gray-800 rounded-lg shadow-md cursor-pointer relative overflow-hidden group"
-            @click="openFeedbackInNewWindow"
+            class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-pink-400 to-red-500"
           >
-            <div class="p-4 flex flex-col justify-between h-full">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-gray-800 dark:text-gray-200">开源地址</span>
-                <el-icon class="text-blue-500 text-lg"><ChatDotRound /></el-icon>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-xs text-gray-600 dark:text-gray-400"
-                  >https://github.com/vastxie/99AI</span
-                >
-                <span class="text-xs text-blue-500 font-medium">点击</span>
-              </div>
+            <el-icon><ChatDotRound /></el-icon>
+          </div>
+          <div class="flex-1">
+            <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日对话</div>
+            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
+              {{ baseInfo.newChatCount || 0 }}
             </div>
-            <div
-              class="absolute inset-0 bg-black bg-opacity-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-            >
-              <div class="flex flex-col items-center gap-2 text-white">
-                <el-icon class="text-4xl"><ChatDotRound /></el-icon>
-                <span class="text-sm font-medium">新窗口打开</span>
-              </div>
+            <div class="text-xs text-gray-500 dark:text-gray-500">
+              总计: {{ baseInfo.chatCount || 0 }}
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
+          <div
+            class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-blue-400 to-cyan-400"
+          >
+            <el-icon><Picture /></el-icon>
+          </div>
+          <div class="flex-1">
+            <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日绘画</div>
+            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
+              {{ baseInfo.newDrawCount || 0 }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-500">
+              总计: {{ baseInfo.drawCount || 0 }}
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
+          <div
+            class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-green-400 to-teal-400"
+          >
+            <el-icon><ShoppingCart /></el-icon>
+          </div>
+          <div class="flex-1">
+            <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日订单</div>
+            <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
+              {{ baseInfo.newOrderCount || 0 }}
+            </div>
+            <div class="text-xs text-gray-500 dark:text-gray-500">
+              总计: {{ baseInfo.orderCount || 0 }}
             </div>
           </div>
         </div>
       </div>
-
-      <!-- 右侧：统计数据 + 图表 -->
-      <div class="flex-[2] flex flex-col gap-4 min-w-0">
-        <!-- 统计卡片 -->
-        <div class="grid grid-cols-2 grid-rows-2 gap-4 h-55">
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
-            <div
-              class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-indigo-500 to-purple-600"
-            >
-              <el-icon><User /></el-icon>
-            </div>
-            <div class="flex-1">
-              <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日新增用户</div>
-              <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                {{ baseInfo?.newUserCount || 0 }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-500">
-                总计: {{ baseInfo.userCount || 0 }}
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
-            <div
-              class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-pink-400 to-red-500"
-            >
-              <el-icon><ChatDotRound /></el-icon>
-            </div>
-            <div class="flex-1">
-              <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日对话</div>
-              <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                {{ baseInfo.newChatCount || 0 }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-500">
-                总计: {{ baseInfo.chatCount || 0 }}
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
-            <div
-              class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-blue-400 to-cyan-400"
-            >
-              <el-icon><Picture /></el-icon>
-            </div>
-            <div class="flex-1">
-              <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日绘画</div>
-              <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                {{ baseInfo.newDrawCount || 0 }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-500">
-                总计: {{ baseInfo.drawCount || 0 }}
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex items-center gap-3">
-            <div
-              class="w-12 h-12 rounded-lg flex items-center justify-center text-2xl text-white bg-gradient-to-br from-green-400 to-teal-400"
-            >
-              <el-icon><ShoppingCart /></el-icon>
-            </div>
-            <div class="flex-1">
-              <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">今日订单</div>
-              <div class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-0.5">
-                {{ baseInfo.newOrderCount || 0 }}
-              </div>
-              <div class="text-xs text-gray-500 dark:text-gray-500">
-                总计: {{ baseInfo.orderCount || 0 }}
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- 图表区域 -->
         <div
@@ -501,7 +448,6 @@ meta:
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <style scoped>

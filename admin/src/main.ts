@@ -25,6 +25,19 @@ import 'virtual:uno.css';
 
 // 全局样式
 import '@/assets/styles/globals.scss';
+
+// Element Plus 主题覆盖 - 蓝色系品牌风格
+import '@/assets/styles/element-plus.scss';
+
+// 布局组件样式优化
+import '@/assets/styles/layout.scss';
+
+// 数据表格和表单组件优化
+import '@/assets/styles/data-components.scss';
+
+// 数据看板和统计组件优化
+import '@/assets/styles/dashboard.scss';
+
 import pinia from './store';
 
 const app = createApp(App);
