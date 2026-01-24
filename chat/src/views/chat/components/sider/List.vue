@@ -79,6 +79,11 @@ async function handleSelect(group: Chat.History) {
   const { uuid } = group
   if (isActive(uuid)) return
 
+  // 如果应用广场正在显示，先关闭它
+  if (useGlobalStore.showAppListComponent) {
+    useGlobalStore.updateShowAppListComponent(false)
+  }
+
   await chatStore.setActiveGroup(uuid)
 
   if (isMobile.value) appStore.setSiderCollapsed(true)
@@ -144,6 +149,9 @@ const useGlobalStore = useGlobalStoreWithOut()
 function isActive(uuid: number) {
   return chatStore.active === uuid
 }
+
+/* 判断应用广场是否激活 */
+const isAppListActive = computed(() => useGlobalStore.showAppListComponent)
 
 async function handleCollect(appId: number) {
   try {
@@ -267,10 +275,18 @@ const isAppsHovered = ref(false)
             <Up v-else theme="outline" size="20" />
           </button>
           <div
-            class="relative flex items-center gap-3 px-3 py-1 break-all rounded-lg cursor-pointer hover:bg-white group dark:hover:bg-gray-800 font-medium text-sm 'text-gray-700', 'dark:bg-gray-900', 'dark:text-gray-400'"
+            class="relative flex items-center gap-3 px-3 py-2 break-all rounded-lg cursor-pointer hover:bg-white group dark:hover:bg-gray-800 font-medium text-sm transition-colors duration-200"
+            :class="
+              isAppListActive
+                ? ['bg-[#e8f0fe]', 'text-primary-600', 'dark:bg-[#1e3a5f]', 'dark:text-white']
+                : ['text-gray-700', 'dark:bg-gray-900', 'dark:text-gray-400']
+            "
             @click="
-              () => {
+              async () => {
+                // 打开应用广场
                 useGlobalStore.updateShowAppListComponent(true)
+                // 清除历史记录的选中状态，避免视觉混淆
+                chatStore.active = 0
                 if (isMobile) {
                   appStore.setSiderCollapsed(true)
                 }
@@ -280,7 +296,8 @@ const isAppsHovered = ref(false)
             <ApplicationTwo
               theme="outline"
               size="25"
-              class="ml-1 mr-1 text-sm my-1 text-gray-600"
+              class="ml-1 mr-1 text-sm my-1"
+              :class="isAppListActive ? '' : 'text-gray-600'"
             />
             {{ t('chat.appSquare') }}
           </div>
