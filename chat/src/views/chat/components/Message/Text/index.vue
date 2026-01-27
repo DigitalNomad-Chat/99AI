@@ -149,6 +149,33 @@ interface TtsResponse {
   ttsUrl: string
 }
 
+// 工作流配置相关接口定义
+interface WorkflowFormField {
+  id: string
+  type: 'input' | 'select' | 'file' | 'image'
+  title: string
+  placeholder: string
+  options?: string[]
+  isVariable?: boolean
+  variableName?: string
+  required?: boolean
+}
+
+interface WorkflowConfig {
+  schema: WorkflowFormField[]
+  data: Record<string, any>
+}
+
+interface ParsedWorkflowMessage {
+  isWorkflow: boolean
+  config?: WorkflowConfig
+  userMessage: string // 非变量字段的组合消息
+  variableFields: Array<{
+    field: WorkflowFormField
+    value: any
+  }>
+}
+
 const authStore = useAuthStore()
 const { isMobile } = useBasicLayout()
 const onConversation = inject<any>('onConversation')
@@ -178,6 +205,84 @@ const onOpenImagePreviewer =
 
 const isHideTts = computed(() => Number(authStore.globalConfig?.isHideTts) === 1)
 const enableHtmlRender = computed(() => Number(authStore.globalConfig?.enableHtmlRender) !== 0)
+
+/**
+ * 检测并解析工作流消息
+ * 如果 content 是工作流JSON格式，则解析并返回结构化数据
+ * 否则返回普通消息标识
+ */
+const parsedWorkflowMessage = computed<ParsedWorkflowMessage>(() => {
+  // 只处理用户消息
+  if (!props.isUserMessage || !props.content) {
+    return {
+      isWorkflow: false,
+      userMessage: '',
+      variableFields: [],
+    }
+  }
+
+  const content = props.content.trim()
+
+  // 检测是否为JSON格式的配置数据
+  // 工作流配置格式: {"schema":[...], "data":{...}}
+  if (!content.startsWith('{') || !content.includes('schema')) {
+    return {
+      isWorkflow: false,
+      userMessage: '',
+      variableFields: [],
+    }
+  }
+
+  try {
+    const configData: WorkflowConfig = JSON.parse(content)
+
+    // 验证是否为有效的工作流配置格式
+    if (!configData.schema || !Array.isArray(configData.schema)) {
+      return {
+        isWorkflow: false,
+        userMessage: '',
+        variableFields: [],
+      }
+    }
+
+    // 解析字段，分离用户消息和变量
+    const messageParts: string[] = []
+    const variableFields: Array<{ field: WorkflowFormField; value: any }> = []
+
+    for (const field of configData.schema) {
+      const value = configData.data?.[field.id]
+      const isVariable = field.isVariable !== undefined ? field.isVariable : true
+
+      if (isVariable) {
+        // 变量字段 - 存储用于卡片展示
+        if (value !== null && value !== undefined && value !== '') {
+          variableFields.push({ field, value })
+        }
+      } else {
+        // 非变量字段 - 组合成用户消息
+        if (value !== null && value !== undefined && value !== '') {
+          messageParts.push(`${field.title}: ${value}`)
+        }
+      }
+    }
+
+    const userMessage = messageParts.length > 0 ? messageParts.join('\n') : '工作流调用'
+
+    return {
+      isWorkflow: true,
+      config: configData,
+      userMessage,
+      variableFields,
+    }
+  } catch (error) {
+    // JSON解析失败，不是工作流消息
+    return {
+      isWorkflow: false,
+      userMessage: '',
+      variableFields: [],
+    }
+  }
+})
 
 const searchResult = computed(() => {
   if (props.networkSearchResult) {
@@ -1127,6 +1232,21 @@ function openSingleImagePreview(src: string) {
     onOpenImagePreviewer([src], 0)
   }
 }
+
+/**
+ * 从文件路径或URL中提取文件名
+ */
+function getFileName(fileValue: any): string {
+  if (typeof fileValue === 'string') {
+    // 从URL路径中提取文件名
+    const parts = fileValue.split('/')
+    return parts[parts.length - 1] || '文件'
+  }
+  if (typeof fileValue === 'object' && fileValue.name) {
+    return fileValue.name
+  }
+  return '文件'
+}
 </script>
 
 <template>
@@ -1229,9 +1349,61 @@ function openSingleImagePreview(src: string) {
         :class="[isMobile ? 'pl-20' : 'pl-28']"
         style="max-width: 100%"
       >
+        <!-- 工作流消息 - 卡片式显示 -->
+        <div
+          v-if="parsedWorkflowMessage.isWorkflow && !isEditable"
+          class="workflow-message-container"
+        >
+          <!-- 用户消息卡片 (主要内容) -->
+          <div
+            v-if="parsedWorkflowMessage.userMessage"
+            class="workflow-main-card"
+          >
+            <div class="workflow-card-header">
+              <span class="workflow-label">用户消息</span>
+            </div>
+            <div class="workflow-card-content">
+              {{ parsedWorkflowMessage.userMessage }}
+            </div>
+          </div>
+
+          <!-- 工作流参数卡片 (次要内容) -->
+          <div
+            v-if="parsedWorkflowMessage.variableFields.length > 0"
+            class="workflow-params-card"
+          >
+            <div class="workflow-card-header">
+              <span class="workflow-label workflow-label-secondary">工作流参数</span>
+            </div>
+            <div class="workflow-params-grid">
+              <div
+                v-for="(item, index) in parsedWorkflowMessage.variableFields"
+                :key="index"
+                class="workflow-param-item"
+                :class="`workflow-param-${item.field.type}`"
+              >
+                <span class="workflow-param-title">{{ item.field.title }}</span>
+                <!-- 文本类型显示 -->
+                <span v-if="item.field.type === 'input' || item.field.type === 'select'" class="workflow-param-value">
+                  {{ item.value }}
+                </span>
+                <!-- 文件类型显示 -->
+                <div v-else-if="item.field.type === 'file'" class="workflow-param-file">
+                  <span class="workflow-file-icon">📄</span>
+                  <span class="workflow-file-name">{{ getFileName(item.value) }}</span>
+                </div>
+                <!-- 图片类型显示 -->
+                <div v-else-if="item.field.type === 'image'" class="workflow-param-image">
+                  <img :src="item.value" alt="参数图片" class="workflow-image-thumb" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 编辑模式 -->
         <div
-          v-if="isEditable"
+          v-else-if="isEditable"
           class="p-3 rounded-2xl w-full bg-opacity dark:bg-gray-750 break-words"
           style="max-width: 100%"
         >
@@ -1274,7 +1446,8 @@ function openSingleImagePreview(src: string) {
             </div>
           </div>
         </div>
-        <!-- 只读模式 -->
+
+        <!-- 只读模式 (普通消息) -->
         <div
           v-else
           class="p-3 rounded-2xl text-base bg-opacity dark:bg-gray-750 break-words whitespace-pre-wrap text-gray-950 dark:text-gray-100"
@@ -1582,4 +1755,224 @@ pre.fold-leave-to {
 }
 
 /* 加载动画样式 */
+
+/* 工作流消息卡片样式 */
+.workflow-message-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 100%;
+  animation: workflowFadeIn 0.3s ease-out;
+}
+
+@keyframes workflowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 主消息卡片 (用户消息) */
+.workflow-main-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  transition: all 0.2s ease;
+}
+
+.workflow-main-card:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.dark .workflow-main-card {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  border-color: #475569;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark .workflow-main-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 参数卡片 (工作流参数) */
+.workflow-params-card {
+  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.875rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.dark .workflow-params-card {
+  background: #2d2d2d;
+  border-color: #404040;
+}
+
+.workflow-params-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* 卡片标题 */
+.workflow-card-header {
+  margin-bottom: 0.75rem;
+}
+
+.workflow-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #0369a1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.625rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 0.375rem;
+}
+
+.dark .workflow-label {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.workflow-label-secondary {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.1);
+}
+
+.dark .workflow-label-secondary {
+  color: #94a3b8;
+  background: rgba(100, 116, 139, 0.15);
+}
+
+/* 主消息内容 */
+.workflow-card-content {
+  color: #1e293b;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dark .workflow-card-content {
+  color: #f1f5f9;
+}
+
+/* 参数网格布局 */
+.workflow-params-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.625rem;
+}
+
+/* 单个参数项 */
+.workflow-param-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.625rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
+}
+
+.dark .workflow-param-item {
+  background: #363636;
+  border-color: #4a4a4a;
+}
+
+.workflow-param-item:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.08);
+}
+
+.workflow-param-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: capitalize;
+}
+
+.dark .workflow-param-title {
+  color: #9ca3af;
+}
+
+/* 参数值 - 文本类型 */
+.workflow-param-value {
+  font-size: 0.875rem;
+  color: #0f172a;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.dark .workflow-param-value {
+  color: #e2e8f0;
+}
+
+/* 文件类型显示 */
+.workflow-param-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.workflow-file-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.workflow-file-name {
+  font-size: 0.8125rem;
+  color: #475569;
+  word-break: break-all;
+}
+
+.dark .workflow-file-name {
+  color: #cbd5e1;
+}
+
+/* 图片类型显示 */
+.workflow-param-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.workflow-image-thumb {
+  max-width: 100%;
+  max-height: 120px;
+  border-radius: 0.375rem;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.workflow-image-thumb:hover {
+  transform: scale(1.05);
+}
+
+/* 响应式调整 */
+@media (max-width: 640px) {
+  .workflow-params-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-main-card,
+  .workflow-params-card {
+    padding: 0.875rem;
+  }
+
+  .workflow-card-content {
+    font-size: 0.875rem;
+  }
+}
 </style>

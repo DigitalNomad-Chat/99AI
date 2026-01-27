@@ -255,6 +255,66 @@ export class WorkflowService {
   }
 
   /**
+   * 流式调用工作流
+   * 返回AsyncIterable<string>，每行一个SSE数据
+   * @param app 应用实体（包含工作流配置）
+   * @param options 调用选项
+   * @returns 异步生成器，每次yield一行SSE数据
+   */
+  async *callWorkflowStream(app: AppEntity, options: WorkflowCallOptions): AsyncIterable<string> {
+    // 验证配置
+    this.validateWorkflowConfig({
+      appType: app.appType,
+      workflowApiUrl: app.workflowApiUrl,
+      workflowApiKey: app.workflowApiKey,
+      workflowAppId: app.workflowAppId,
+    });
+
+    // 获取适配器
+    const adapter = this.adapterManager.getAdapter(app.appType);
+
+    // 构建请求（强制使用stream: true）
+    const requestConfig = adapter.buildRequest(app, {
+      ...options,
+      stream: true,
+    });
+
+    this.logger.log(`流式调用工作流: ${adapter.name} - ${app.name} (appId: ${options.appId})`);
+
+    try {
+      // 发送流式请求
+      const response = await axios({
+        ...requestConfig,
+        responseType: 'stream',
+      });
+
+      // 逐行读取SSE数据
+      const stream = response.data;
+      let buffer = '';
+
+      for await (const chunk of stream) {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // 保留不完整的行
+
+        for (const line of lines) {
+          if (line.trim()) {
+            yield line;
+          }
+        }
+      }
+
+      // 处理剩余数据
+      if (buffer.trim()) {
+        yield buffer;
+      }
+    } catch (error) {
+      this.logger.error(`流式调用工作流失败: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
+  /**
    * 检查应用是否是工作流类型
    */
   isWorkflowApp(app: AppEntity): boolean {

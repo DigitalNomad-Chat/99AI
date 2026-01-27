@@ -24,6 +24,7 @@ import { PluginEntity } from '../plugin/plugin.entity';
 import { UploadService } from '../upload/upload.service';
 import { UserService } from '../user/user.service';
 import { UserBalanceService } from '../userBalance/userBalance.service';
+import { WorkflowService } from '../workflow/workflow.service';
 
 @Injectable()
 export class ChatService {
@@ -43,6 +44,7 @@ export class ChatService {
     private readonly chatGroupService: ChatGroupService,
     private readonly modelsService: ModelsService,
     private readonly appService: AppService,
+    private readonly workflowService: WorkflowService,
   ) {}
 
   async chatProcess(body: any, req?: Request, res?: Response) {
@@ -168,14 +170,396 @@ export class ChatService {
 
       // 检查是否是工作流应用
       if (appType && appType > 0) {
+        Logger.log(`========== 工作流调试开始 ==========`, 'ChatService');
         Logger.log(`检测到工作流应用: ${name} (appType: ${appType})`, 'ChatService');
-        // 工作流应用的处理逻辑
-        // 注意：这里需要注入WorkflowService来处理工作流调用
-        // 暂时记录日志，实际调用需要在后续步骤中实现
+
+        // 解析前端传来的配置数据（JSON格式）
+        let variables: Record<string, any> = {};
+        let userMessage = prompt;
+
+        // 【调试点1】记录接收到的原始prompt
+        Logger.debug(`[工作流调试1] 接收到的原始prompt长度: ${prompt?.length}`, 'ChatService');
+        Logger.debug(`[工作流调试1] prompt前500字符: ${prompt?.substring(0, 500)}`, 'ChatService');
+
+        try {
+          const configData = JSON.parse(prompt);
+
+          // 【调试点2】记录解析后的configData结构
+          Logger.debug(`[工作流调试2] configData有schema: ${!!configData.schema}`, 'ChatService');
+          Logger.debug(`[工作流调试2] configData有data: ${!!configData.data}`, 'ChatService');
+
+          // 兼容旧格式：只有 formData 的情况
+          if (!configData.schema && typeof configData === 'object') {
+            Logger.debug(`[工作流调试3] 使用旧格式解析`, 'ChatService');
+            variables = configData;
+            userMessage = Object.values(configData)
+              .filter((v): v is string | number => v !== null && v !== undefined && v !== '')
+              .join(' ');
+            if (!userMessage) {
+              userMessage = '工作流调用';
+            }
+          }
+          // 新格式：包含 schema 和 data
+          else if (configData.schema && Array.isArray(configData.schema)) {
+            Logger.debug(
+              `[工作流调试3] 使用新格式解析，schema长度: ${configData.schema.length}`,
+              'ChatService',
+            );
+            const schema = configData.schema;
+            const data = configData.data || {};
+            const messageParts: string[] = [];
+
+            // 【调试点4】详细记录schema和data
+            Logger.debug(
+              `[工作流调试4] data的keys: ${JSON.stringify(Object.keys(data))}`,
+              'ChatService',
+            );
+            Logger.debug(`[工作流调试4] data的内容: ${JSON.stringify(data)}`, 'ChatService');
+
+            for (const field of schema) {
+              const value = data[field.id];
+
+              // 【调试点5】详细记录每个字段的处理
+              Logger.debug(
+                `[工作流调试5] 字段处理 - title: ${field.title}, id: ${field.id}, isVariable: ${
+                  field.isVariable
+                }, value: ${JSON.stringify(value)}`,
+                'ChatService',
+              );
+
+              // 向后兼容：isVariable 未定义时默认为 true
+              const isVariable = field.isVariable !== undefined ? field.isVariable : true;
+
+              if (isVariable) {
+                // 作为变量传递给 FastGPT
+                const varName = field.variableName || field.id;
+                if (value !== null && value !== undefined && value !== '') {
+                  variables[varName] = String(value); // 确保值为文本类型
+                  Logger.debug(`[工作流调试6] 添加变量: ${varName} = ${value}`, 'ChatService');
+                } else {
+                  Logger.debug(`[工作流调试6] 变量 ${varName} 值为空，跳过`, 'ChatService');
+                }
+              } else {
+                // 作为消息内容（非变量字段）
+                if (value !== null && value !== undefined && value !== '') {
+                  messageParts.push(`${field.title}: ${value}`);
+                  Logger.debug(
+                    `[工作流调试6] 添加消息部分: ${field.title}: ${value}`,
+                    'ChatService',
+                  );
+                } else {
+                  Logger.debug(
+                    `[工作流调试6] 非变量字段 ${field.title} 值为空，跳过`,
+                    'ChatService',
+                  );
+                }
+              }
+            }
+
+            // 拼接非变量字段为用户消息
+            userMessage = messageParts.length > 0 ? messageParts.join('\n') : '工作流调用';
+            Logger.debug(
+              `[工作流调试7] 最终messageParts数量: ${messageParts.length}`,
+              'ChatService',
+            );
+            Logger.debug(`[工作流调试7] 最终userMessage: ${userMessage}`, 'ChatService');
+          }
+        } catch (error) {
+          Logger.debug(`[工作流调试8] JSON解析失败: ${error}`, 'ChatService');
+          // 不是JSON格式，使用原始消息
+          userMessage = prompt;
+        }
+
         Logger.debug(
-          `工作流应用配置: appType=${appType}, workflowApiUrl=${appInfo.workflowApiUrl}`,
+          `工作流调用参数: variables=${JSON.stringify(variables)}, message=${userMessage}`,
           'ChatService',
         );
+        Logger.log(`========== 工作流调试结束 ==========`, 'ChatService');
+
+        // 声明日志变量（需要在 try 块外部以便错误处理使用）
+        let assistantSaveLog: any;
+        let userSaveLog: any;
+
+        try {
+          // 保存用户消息日志
+          userSaveLog = await this.chatLogService.saveChatLog({
+            appId: appId,
+            curIp,
+            userId: req.user.id,
+            type: 1,
+            content: prompt,
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            model: model || 'workflow',
+            modelName: '我',
+            role: 'user',
+            groupId: groupId ? groupId : null,
+          });
+
+          // 创建助手回复日志（内容将在流式更新中补充）
+          assistantSaveLog = await this.chatLogService.saveChatLog({
+            appId: appId ? appId : null,
+            curIp,
+            userId: req.user.id,
+            type: 1,
+            content: '',
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            model: model || 'workflow',
+            modelName: name,
+            role: 'assistant',
+            groupId: groupId ? groupId : null,
+            status: 2,
+            modelAvatar: useModelAvatar || modelAvatar || '',
+          });
+
+          // 初始化流式响应
+          let fullContent = '';
+          let fullReasoningContent = '';
+          let promptTokens = 0;
+          let completionTokens = 0;
+          let totalTokens = 0;
+
+          // 深度思考状态跟踪
+          let thinkingSourceType: 'reasoning_content' | 'think_tag' | null = null;
+          let inThinkingBlock = false;
+
+          // 发送初始响应
+          if (res) {
+            res.write(
+              JSON.stringify({
+                messageId: assistantSaveLog.id,
+                chatId: userSaveLog.id,
+                content: [{ type: 'text', text: '' }],
+              }) + '\n',
+            );
+          }
+
+          // 流式调用工作流服务
+          Logger.log(`开始流式调用工作流: ${name}`, 'ChatService');
+          for await (const line of this.workflowService.callWorkflowStream(appInfo, {
+            appId: appInfo.id,
+            variables: variables,
+            message: userMessage,
+            stream: true,
+            chatId: groupId ? String(groupId) : undefined,
+          })) {
+            // 解析SSE格式: data: {...}
+            if (line.startsWith('data: ')) {
+              try {
+                const dataStr = line.slice(6).trim();
+                if (dataStr === '[DONE]') {
+                  Logger.debug('收到流式结束标记', 'ChatService');
+                  break;
+                }
+
+                const data = JSON.parse(dataStr);
+                const delta = data.choices?.[0]?.delta || {};
+                const content = delta.content || '';
+                const reasoningContent = delta.reasoning_content || '';
+
+                // 优先检测 reasoning_content 字段（方案A）
+                if (reasoningContent) {
+                  if (!thinkingSourceType) {
+                    thinkingSourceType = 'reasoning_content';
+                    Logger.debug('检测到reasoning_content字段，使用方案A解析', 'ChatService');
+                  }
+                  fullReasoningContent += reasoningContent;
+                  if (res) {
+                    res.write(
+                      JSON.stringify({
+                        reasoning_content: [{ type: 'text', text: reasoningContent }],
+                      }) + '\n',
+                    );
+                  }
+                }
+                // 处理普通content
+                else if (content) {
+                  // 如果已确定使用reasoning_content模式，content是正常回答
+                  if (thinkingSourceType === 'reasoning_content') {
+                    fullContent += content;
+                    if (res) {
+                      res.write(
+                        JSON.stringify({ content: [{ type: 'text', text: content }] }) + '\n',
+                      );
+                    }
+                  }
+                  // 检测think标签（方案B）
+                  else if (content.includes('...')) {
+                    if (!thinkingSourceType) {
+                      thinkingSourceType = 'think_tag';
+                      Logger.debug('检测到...标签，使用方案B解析', 'ChatService');
+                    }
+
+                    // 检测开始标签
+                    if (content.includes('...') && !inThinkingBlock) {
+                      const thinkStartMatch = content.match(/([\s\S]*)/);
+                      if (thinkStartMatch) {
+                        const thinkContent = thinkStartMatch[1];
+                        fullReasoningContent += thinkContent;
+                        if (res) {
+                          res.write(
+                            JSON.stringify({
+                              reasoning_content: [{ type: 'text', text: thinkContent }],
+                            }) + '\n',
+                          );
+                        }
+                        inThinkingBlock = true;
+                      }
+                    } else if (inThinkingBlock) {
+                      // 思考块内的内容
+                      if (content.includes('...')) {
+                        // 检测结束标签
+                        const thinkEndMatch = content.match(/([\s\S]*?)([\s\S]*)/);
+                        if (thinkEndMatch) {
+                          const remainingThinkContent = thinkEndMatch[1];
+                          const normalContent = thinkEndMatch[2];
+                          fullReasoningContent += remainingThinkContent;
+                          if (res) {
+                            res.write(
+                              JSON.stringify({
+                                reasoning_content: [{ type: 'text', text: remainingThinkContent }],
+                              }) + '\n',
+                            );
+                          }
+                          inThinkingBlock = false;
+                          // 剩余的普通内容
+                          if (normalContent) {
+                            fullContent += normalContent;
+                            if (res) {
+                              res.write(
+                                JSON.stringify({
+                                  content: [{ type: 'text', text: normalContent }],
+                                }) + '\n',
+                              );
+                            }
+                          }
+                        }
+                      } else {
+                        // 思考块内的内容
+                        fullReasoningContent += content;
+                        if (res) {
+                          res.write(
+                            JSON.stringify({
+                              reasoning_content: [{ type: 'text', text: content }],
+                            }) + '\n',
+                          );
+                        }
+                      }
+                    } else {
+                      // 普通回答内容
+                      fullContent += content;
+                      if (res) {
+                        res.write(
+                          JSON.stringify({ content: [{ type: 'text', text: content }] }) + '\n',
+                        );
+                      }
+                    }
+                  }
+                  // 未检测到思考流，作为普通内容处理
+                  else {
+                    fullContent += content;
+                    if (res) {
+                      res.write(
+                        JSON.stringify({ content: [{ type: 'text', text: content }] }) + '\n',
+                      );
+                    }
+                  }
+                }
+
+                // 更新token统计
+                if (data.usage) {
+                  promptTokens = data.usage.prompt_tokens || 0;
+                  completionTokens = data.usage.completion_tokens || 0;
+                  totalTokens = data.usage.total_tokens || 0;
+                }
+              } catch (parseError) {
+                Logger.warn(`解析SSE数据失败: ${parseError.message}, line: ${line}`, 'ChatService');
+              }
+            }
+          }
+
+          Logger.log(
+            `工作流流式调用完成: ${name}, 内容长度: ${fullContent.length}, 思考长度: ${fullReasoningContent.length}, Token使用: ${totalTokens}`,
+            'ChatService',
+          );
+
+          // 改进Token统计：如果FastGPT未返回token统计，则手动计算
+          // 包含思考内容以确保准确性
+          let finalPromptTokens = promptTokens;
+          let finalCompletionTokens = completionTokens;
+          let finalTotalTokens = totalTokens;
+
+          if (totalTokens === 0 && (fullContent || fullReasoningContent)) {
+            // FastGPT未返回token统计，手动计算
+            finalPromptTokens = await getTokenCount(userMessage);
+            finalCompletionTokens = await getTokenCount(fullReasoningContent + fullContent);
+            finalTotalTokens = finalPromptTokens + finalCompletionTokens;
+            Logger.debug(
+              `手动计算Token统计: prompt=${finalPromptTokens}, completion=${finalCompletionTokens}, total=${finalTotalTokens}`,
+              'ChatService',
+            );
+          }
+
+          // 更新助手日志（包含完整内容和思考内容）
+          await this.chatLogService.updateChatLog(assistantSaveLog.id, {
+            content: fullContent,
+            reasoning_content: fullReasoningContent || undefined,
+            promptTokens: finalPromptTokens,
+            completionTokens: finalCompletionTokens,
+            totalTokens: finalTotalTokens,
+            status: 3,
+          });
+
+          // 结束响应
+          if (res) {
+            res.end();
+          }
+
+          return;
+        } catch (error) {
+          // 改进的错误处理
+          const errorMessage = error.response?.data?.message || error.message || '未知错误';
+          const errorStatus = error.response?.status || error.code;
+
+          Logger.error(
+            `工作流调用失败 [${name}]: ${errorMessage}, 状态: ${errorStatus}`,
+            'ChatService',
+            error.stack,
+          );
+
+          // 更新助手日志为失败状态
+          try {
+            await this.chatLogService.updateChatLog(assistantSaveLog.id, {
+              content: `工作流调用失败: ${errorMessage}`,
+              status: 4, // 失败状态
+            });
+          } catch (updateError) {
+            Logger.warn(`更新失败状态时出错: ${updateError.message}`, 'ChatService');
+          }
+
+          // 发送错误响应
+          if (res) {
+            return res.write(
+              `${JSON.stringify({
+                error: `工作流调用失败: ${errorMessage}`,
+                errorCode: errorStatus,
+              })}\n`,
+            );
+          }
+
+          // 根据错误类型返回不同的HTTP状态码
+          if (errorStatus === 401) {
+            throw new HttpException('工作流API密钥无效', HttpStatus.UNAUTHORIZED);
+          } else if (errorStatus === 429) {
+            throw new HttpException('工作流请求频率过高', HttpStatus.TOO_MANY_REQUESTS);
+          } else if (errorStatus >= 500) {
+            throw new HttpException('工作流服务暂时不可用', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+          throw new HttpException(`工作流调用失败: ${errorMessage}`, HttpStatus.BAD_REQUEST);
+        }
       }
 
       if (isGPTs) {

@@ -72,7 +72,7 @@ curl --location --request POST 'http://localhost:3000/api/v1/chat/completions' \
 ···参数说明
 headers.Authorization: Bearer [apikey]
 chatId: string | undefined 。
-为时（不传入），不使用 FastGpt 提供的上下文功能，完全通过传入的 messages 构建上下文。
+为空时（不传入），不使用 FastGpt 提供的上下文功能，完全通过传入的 messages 构建上下文。
 为非空字符串时，意味着使用 chatId 进行对话，自动从 FastGpt 数据库取历史记录，并使用 messages数组最后一个内容作为用户问题，其余 message 会被忽略。请自行确保 chatId唯一，长度小于250，通常可以是自己系统的对话框ID。
 messages: 结构与GPT接口 chat模式一致。
 responseChatItemId: string | undefined 。如果传入，则会将该值作为本次对话的响应消息的 ID，FastGPT会自动将该 ID 存入数据库。请确保，在当前chatId下，responseChatItemId是唯一的。

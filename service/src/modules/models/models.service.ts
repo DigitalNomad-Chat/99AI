@@ -295,7 +295,7 @@ export class ModelsService {
             modelName: params.modelName || params.model || '默认模型',
             model: params.model || 'gpt-3.5-turbo',
             keyType: params.keyType !== undefined ? params.keyType : 0,
-            status: params.status !== undefined ? params.status : 1,
+            status: params.status !== undefined ? Boolean(params.status) : true,
           };
           const res = await this.modelsEntity.save(saveData);
           await this.initCalcKey();

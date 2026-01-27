@@ -143,6 +143,14 @@ export class CreateAppDto {
   workflowAppId: string;
 
   @ApiProperty({
+    example: '[{"type":"input","title":"用户名","placeholder":"请输入用户名"}]',
+    description: '工作流模板配置(JSON格式)',
+    required: false,
+  })
+  @IsOptional()
+  workflowTemplateConfig: string;
+
+  @ApiProperty({
     example: 'App背景图',
     description: 'App背景图',
     required: false,

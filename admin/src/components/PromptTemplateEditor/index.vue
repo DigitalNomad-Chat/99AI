@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { Delete, Plus, Rank } from '@element-plus/icons-vue';
+  import { Delete, Lock, Plus, Rank } from '@element-plus/icons-vue';
   import { ElMessage } from 'element-plus';
   import { v4 as uuidv4 } from 'uuid';
   import { computed, ref } from 'vue';
@@ -15,11 +15,13 @@
     isVariable?: boolean;
     variableName?: string;
     required?: boolean;
+    systemType?: 'userPrompt' | null;  // 标识系统字段
   }
 
   // 定义 Props 和 Emits
   const props = defineProps<{
     modelValue: TemplateField[];
+    appType?: number;  // 0=智能体, 1=FastGPT, 2=Dify, 3=n8n
   }>();
 
   const emit = defineEmits<{
@@ -37,6 +39,8 @@
 
   // 添加新字段
   const addField = (type: 'input' | 'select' | 'file' | 'image' = 'input') => {
+    const isFastGPT = props.appType === 1;
+
     fields.value = [
       ...fields.value,
       {
@@ -45,7 +49,8 @@
         title: '',
         placeholder: '',
         options: type === 'select' ? [''] : undefined,
-        isVariable: type !== 'file' && type !== 'image', // 文件类型默认不作为变量
+        // FastGPT 模式下新建字段默认为变量，非工作流模式固定为 false
+        isVariable: isFastGPT ? true : false,
         variableName: '',
         required: false,
       },
@@ -180,6 +185,19 @@
     };
     return labels[type] || type;
   };
+
+  // 判断字段是否为系统字段（完全锁定）
+  const isSystemField = (field: TemplateField): boolean => {
+    return field.systemType === 'userPrompt';
+  };
+
+  // 判断字段是否应该禁用 isVariable 修改
+  const shouldDisableIsVariable = (field: TemplateField): boolean => {
+    // 非 FastGPT 模式下，所有字段的 isVariable 都禁用
+    if (props.appType !== 1) return true;
+    // FastGPT 模式下，所有字段的 isVariable 都禁用（锁定为变量）
+    return true;
+  };
 </script>
 
 <template>
@@ -187,17 +205,61 @@
     <!-- Use CSS Grid for layout -->
     <draggable v-model="fields" item-key="id" v-bind="dragOptions" tag="div" class="field-grid">
       <template #item="{ element: field, index }">
-        <el-card shadow="never" class="field-item border border-gray-200 relative group">
-          <div class="flex items-start space-x-3">
-            <!-- Add Number Prefix -->
-            <div class="field-number font-semibold text-gray-400 pt-2 mr-1">{{ index + 1 }}.</div>
-            <!-- Drag Handle -->
-            <div class="drag-handle cursor-move text-gray-400 hover:text-gray-600 pt-2">
-              <el-icon :size="20"><Rank /></el-icon>
+        <el-card
+          shadow="never"
+          class="field-item border border-gray-200 relative group"
+          :class="{ 'system-field-card': isSystemField(field) }"
+        >
+          <!-- System Field Header -->
+          <div v-if="isSystemField(field)" class="system-field-header">
+            <el-tag size="small" type="warning" effect="dark">
+              <el-icon class="mr-1"><Lock /></el-icon>
+              系统字段（不可删除/修改）
+            </el-tag>
+          </div>
+
+          <div class="flex items-start space-x-3" :class="{ 'mt-2': isSystemField(field) }">
+            <!-- Add Number Prefix (系统字段不显示序号) -->
+            <div v-if="!isSystemField(field)" class="field-number font-semibold text-gray-400 pt-2 mr-1">
+              {{ index + 1 }}.
             </div>
+
+            <!-- Drag Handle / Lock Icon -->
+            <div
+              class="drag-handle text-gray-400 hover:text-gray-600 pt-2"
+              :class="{ 'cursor-not-allowed': isSystemField(field), 'cursor-move': !isSystemField(field) }"
+            >
+              <el-icon :size="20">
+                <Rank v-if="!isSystemField(field)" />
+                <Lock v-else class="text-orange-500" />
+              </el-icon>
+            </div>
+
             <!-- Field Content -->
-            <div class="flex-grow">
-              <el-form label-position="top" size="small">
+            <div class="flex-grow min-w-0">
+              <!-- System Field: 简化显示 -->
+              <div v-if="isSystemField(field)" class="system-field-content">
+                <div class="flex items-center gap-2 mb-3">
+                  <el-tag size="small" :type="field.type === 'input' ? 'primary' : field.type === 'select' ? 'success' : 'warning'">
+                    {{ getFieldTypeLabel(field.type) }}
+                  </el-tag>
+                  <el-tag size="small" type="danger">必填</el-tag>
+                  <el-tag size="small" type="info">作为工作流变量：否</el-tag>
+                </div>
+                <div class="field-info-display">
+                  <div class="info-row">
+                    <span class="info-label">字段名称：</span>
+                    <span class="info-value">{{ field.title }}</span>
+                  </div>
+                  <div class="info-row">
+                    <span class="info-label">提示文字：</span>
+                    <span class="info-value text-gray-600">{{ field.placeholder }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Regular Field: 正常表单 -->
+              <el-form v-else label-position="top" size="small">
                 <div class="flex items-center mb-2 space-x-4">
                   <el-radio-group
                     :model-value="field.type"
@@ -205,6 +267,7 @@
                       (newType) => updateFieldType(field.id, newType as 'input' | 'select' | 'file' | 'image')
                     "
                     size="small"
+                    :disabled="isSystemField(field)"
                   >
                     <el-radio-button label="input">输入框</el-radio-button>
                     <el-radio-button label="select">下拉框</el-radio-button>
@@ -215,6 +278,7 @@
                     :icon="Delete"
                     class="ml-auto field-delete-btn"
                     @click="removeField(field.id)"
+                    :disabled="isSystemField(field)"
                   />
                 </div>
 
@@ -226,21 +290,23 @@
                   <el-tag v-if="field.required" size="small" type="danger" class="ml-1">必填</el-tag>
                 </div>
 
-                <el-form-item label="字段名称 (Title / Label)">
+                <el-form-item label="字段名称 * (Title / Label)">
                   <el-input
                     :model-value="field.title"
                     @update:modelValue="(val) => updateTitleValue(field.id, val)"
                     placeholder="例如：您的姓名"
                     clearable
+                    :disabled="isSystemField(field)"
                   />
                 </el-form-item>
 
-                <el-form-item label="提示文字 (Placeholder)">
+                <el-form-item label="提示文字 * (Placeholder)">
                   <el-input
                     :model-value="field.placeholder"
                     @update:modelValue="(val) => updatePlaceholderValue(field.id, val)"
                     placeholder="例如：请输入您的姓名"
                     clearable
+                    :disabled="isSystemField(field)"
                   />
                 </el-form-item>
 
@@ -252,14 +318,25 @@
                       @change="() => toggleIsVariable(field.id)"
                       active-text="是"
                       inactive-text="否"
+                      :disabled="shouldDisableIsVariable(field)"
                     />
+                    <div v-if="props.appType !== 1" class="text-xs text-gray-500 mt-1">
+                      仅 FastGPT 工作流模式支持变量
+                    </div>
+                    <div v-if="props.appType === 1 && !isSystemField(field)" class="text-xs text-gray-500 mt-1">
+                      FastGPT 工作流模式下，所有字段默认作为变量传递
+                    </div>
+                    <div v-if="isSystemField(field)" class="text-xs text-orange-500 mt-1">
+                      系统字段不可修改
+                    </div>
                   </el-form-item>
-                  <el-form-item v-if="field.isVariable" label="变量名">
+                  <el-form-item v-if="field.isVariable" label="变量名 *">
                     <el-input
                       :model-value="field.variableName"
                       @update:modelValue="(val) => updateVariableName(field.id, val)"
                       placeholder="例如：userName"
                       clearable
+                      :disabled="props.appType !== 1"
                     />
                     <div class="text-xs text-gray-500 mt-1">变量名将传递给工作流平台</div>
                   </el-form-item>
@@ -270,12 +347,13 @@
                   <el-switch
                     :model-value="field.required"
                     @change="() => toggleRequired(field.id)"
+                    :disabled="isSystemField(field)"
                   />
                 </el-form-item>
 
                 <!-- 下拉框选项配置 -->
                 <div v-if="field.type === 'select'">
-                  <el-form-item label="下拉选项">
+                  <el-form-item label="下拉选项 *">
                     <div class="space-y-2 w-full">
                       <div
                         v-for="(option, index) in field.options"
@@ -337,6 +415,7 @@
     <!-- 添加按钮组 - 统一视觉语言 -->
     <div class="field-actions">
       <button
+        type="button"
         class="action-btn action-btn-input"
         @click="addField('input')"
       >
@@ -349,6 +428,7 @@
       </button>
 
       <button
+        type="button"
         class="action-btn action-btn-select"
         @click="addField('select')"
       >
@@ -361,6 +441,7 @@
       </button>
 
       <button
+        type="button"
         class="action-btn action-btn-file"
         @click="addField('file')"
       >
@@ -373,6 +454,7 @@
       </button>
 
       <button
+        type="button"
         class="action-btn action-btn-image"
         @click="addField('image')"
       >
@@ -408,6 +490,57 @@
   }
   .field-item:hover {
     box-shadow: var(--el-box-shadow-lighter);
+  }
+
+  /* 系统字段卡片样式 */
+  .system-field-card {
+    background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
+    border-color: #f59e0b !important;
+    border-width: 2px;
+  }
+  .system-field-card:hover {
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+  }
+
+  /* 系统字段内容样式 */
+  .system-field-header {
+    padding: 12px 12px 0;
+    text-align: center;
+  }
+
+  .system-field-content {
+    padding: 12px 0 0;
+  }
+
+  .field-info-display {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+  }
+
+  .field-info-display .info-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 6px 0;
+  }
+
+  .field-info-display .info-row:not(:last-child) {
+    border-bottom: 1px dashed rgba(245, 158, 11, 0.2);
+  }
+
+  .field-info-display .info-label {
+    color: #92400e;
+    font-weight: 500;
+    font-size: 13px;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  .field-info-display .info-value {
+    color: #78350f;
+    font-size: 13px;
+    word-break: break-all;
   }
 
   .drag-handle {

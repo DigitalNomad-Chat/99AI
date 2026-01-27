@@ -65,6 +65,8 @@ const dataSourceOptions: DataSourceOptions = {
 
 /**
  * 通用的列类型迁移函数
+ * 说明: 此函数用于处理早期数据库的列类型升级(如 VARCHAR -> TEXT, TEXT -> MEDIUMTEXT)
+ * 新增字段的创建由 TypeORM synchronize 自动处理，无需手动迁移
  * @param tableName 表名
  * @param columnName 列名
  * @param targetType 目标数据类型
@@ -240,55 +242,90 @@ export async function initDatabase() {
     Logger.log('数据迁移操作完成', 'Database');
 
     // =========================================================================
-    // TypeORM Synchronize 已禁用
+    // 智能同步策略：检测数据库是否为空
     // =========================================================================
     //
-    // 【禁用原因】
-    // 1. 已导致多次历史数据被置空的问题（modelName, model, role 等字段）
-    // 2. synchronize 在每次启动时自动执行，可能意外修改数据库
-    // 3. TypeORM 官方明确警告：synchronize 不应在生产环境使用
+    // 【策略说明】
+    // - 全新数据库：启用同步创建表结构
+    // - 已有数据：禁用同步保护历史数据
     //
-    // 【问题记录】
-    // - 日期: 2026-01-24
-    // - 影响: models 表、chatlog 表的部分字段被置空
-    // - 详情: 见 docs/数据置空根本原因-TypeORM同步机制.md
+    // 【风险控制】
+    // - 只在检测到数据库为空时启用同步
+    // - 同步完成后立即禁用
+    // - synchronize 只能创建表和字段，不能删除数据
     //
-    // 【替代方案】
-    // 添加新字段时，使用 migrateColumnType() 函数或手动执行 SQL
-    //
-    // 【何时可以重新启用】
-    // 1. 项目处于初期原型阶段，没有重要历史数据
-    // 2. 需要频繁调整数据库结构
-    // 3. 可以接受数据丢失风险
-    //
-    // 【重新启用方法】
-    // 取消下方注释代码的注释，同时注释掉当前的 "禁用同步" 代码
     // =========================================================================
 
-    // --- 当前使用：禁用同步 ---
-    // 使用禁用同步的连接，防止 synchronize 意外修改历史数据
-    const dataSource = new DataSource(dataSourceOptions);
-    await dataSource.initialize();
-    Logger.log('已连接到数据库', 'Database');
+    // 检查数据库是否为空（是否有表存在）
+    let useSynchronize = false;
+    const checkConn = await mysql.createConnection({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASS,
+      port: parseInt(process.env.DB_PORT, 10),
+      database: process.env.DB_DATABASE,
+    });
 
-    // 关闭连接
-    if (dataSource.isInitialized) {
-      await dataSource.destroy();
+    try {
+      const [tables] = (await checkConn.execute(
+        `SELECT COUNT(*) as count FROM information_schema.tables
+         WHERE table_schema = ?`,
+        [process.env.DB_DATABASE],
+      )) as mysql.RowDataPacket[];
+
+      const tableCount = tables[0]?.count || 0;
+      Logger.log(`当前数据库表数量: ${tableCount}`, 'Database');
+
+      // 如果数据库为空（没有表），启用同步
+      if (tableCount === 0) {
+        Logger.warn('检测到空数据库，启用 TypeORM 同步以创建表结构', 'Database');
+        useSynchronize = true;
+      } else {
+        Logger.log('数据库已存在表，禁用 TypeORM 同步以保护历史数据', 'Database');
+        useSynchronize = false;
+      }
+    } catch (error) {
+      Logger.warn(`检查数据库状态失败: ${error.message}，默认禁用同步`, 'Database');
+      useSynchronize = false;
+    } finally {
+      await checkConn.end();
     }
 
-    // --- 以下为：启用同步（已禁用）---
-    // // 创建启用同步的连接，确保所有新表和字段被创建
-    // const syncOptions: DataSourceOptions = {
-    //   ...dataSourceOptions,
-    //   synchronize: true,
-    // };
-    // const syncDataSource = new DataSource(syncOptions);
-    // await syncDataSource.initialize();
-    // Logger.log('数据库结构同步完成', 'Database');
+    // --- 根据数据库状态选择同步策略 ---
+    if (useSynchronize) {
+      // 全新数据库：启用同步创建所有表和字段
+      Logger.warn('正在创建数据库表结构（同步模式）...', 'Database');
+      const syncOptions: DataSourceOptions = {
+        ...dataSourceOptions,
+        synchronize: true,
+      };
+      const syncDataSource = new DataSource(syncOptions);
+      await syncDataSource.initialize();
+      Logger.log('数据库结构同步完成', 'Database');
+
+      if (syncDataSource.isInitialized) {
+        await syncDataSource.destroy();
+      }
+
+      Logger.warn('同步已完成，后续启动将禁用同步保护数据', 'Database');
+    } else {
+      // 已有数据：禁用同步保护历史数据
+      const dataSource = new DataSource(dataSourceOptions);
+      await dataSource.initialize();
+      Logger.log('已连接到数据库（同步已禁用）', 'Database');
+
+      if (dataSource.isInitialized) {
+        await dataSource.destroy();
+      }
+    }
+
+    // --- 以下为：旧版强制禁用逻辑（已替换）---
+    // // const dataSource = new DataSource(dataSourceOptions);
+    // await dataSource.initialize();
+    // Logger.log('已连接到数据库', 'Database');
     //
-    // // 关闭同步连接
-    // if (syncDataSource.isInitialized) {
-    //   await syncDataSource.destroy();
+    // if (dataSource.isInitialized) {
+    //   await dataSource.destroy();
     // }
 
     Logger.log('数据库初始化成功完成', 'Database');

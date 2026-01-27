@@ -77,4 +77,7 @@ export class AppEntity extends BaseEntity {
 
   @Column({ comment: '工作流AppId/FlowId', nullable: true, type: 'text' })
   workflowAppId: string;
+
+  @Column({ comment: '工作流模板配置(JSON)', nullable: true, type: 'text' })
+  workflowTemplateConfig: string;
 }

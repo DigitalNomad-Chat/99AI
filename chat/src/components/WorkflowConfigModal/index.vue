@@ -1,107 +1,127 @@
 <script setup lang="ts">
-  import { Close, Delete, Upload } from '@icon-park/vue-next'
-  import { message } from '@/utils/message'
-  import { computed, ref } from 'vue'
+import { Close, Delete, Upload } from '@icon-park/vue-next'
+import { message } from '@/utils/message'
+import { computed, ref } from 'vue'
 
-  interface FormField {
-    id: string
-    type: 'input' | 'select' | 'file' | 'image'
-    title: string
-    placeholder: string
-    options?: string[]
-    isVariable?: boolean
-    variableName?: string
-    required?: boolean
-  }
+interface FormField {
+  id: string
+  type: 'input' | 'select' | 'file' | 'image'
+  title: string
+  placeholder: string
+  options?: string[]
+  isVariable?: boolean
+  variableName?: string
+  required?: boolean
+}
 
-  interface App {
-    id: number
-    name: string
-    appType: number
-    des: string
-    coverImg: string
-    prompt?: string
-  }
+interface App {
+  id: number
+  name: string
+  appType: number
+  des: string
+  coverImg: string
+  prompt?: string
+}
 
-  interface Props {
-    app: App
-    formSchema: FormField[]
-  }
+interface Props {
+  app: App
+  formSchema: FormField[]
+}
 
-  interface Emits {
-    (e: 'submit', data: Record<string, string | File>): void
-    (e: 'close'): void
-  }
+interface Emits {
+  (e: 'submit', data: {
+    schema: FormField[]
+    data: Record<string, string | File>
+  }): void
+  (e: 'close'): void
+}
 
-  const props = defineProps<Props>()
-  const emit = defineEmits<Emits>()
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
 
-  const formData = ref<Record<string, string | File>>({})
-  const filePreviews = ref<Record<string, { name: string; url: string }>>({})
-  const uploading = ref(false)
+const formData = ref<Record<string, string | File>>({})
+const filePreviews = ref<Record<string, { name: string; url: string }>>({})
+const uploading = ref(false)
 
-  const isValid = computed(() => {
-    // 检查所有必填字段是否已填写
-    for (const field of props.formSchema) {
-      if (field.required && !formData.value[field.id]) {
-        return false
-      }
+const isValid = computed(() => {
+  // 检查所有必填字段是否已填写
+  for (const field of props.formSchema) {
+    if (field.required && !formData.value[field.id]) {
+      return false
     }
-    return true
-  })
-
-  function handleInputChange(fieldId: string, value: string) {
-    formData.value[fieldId] = value
   }
+  return true
+})
 
-  function handleFileChange(fieldId: string, file: File) {
-    formData.value[fieldId] = file
+function handleInputChange(fieldId: string, value: string) {
+  formData.value[fieldId] = value
+}
 
-    // 创建预览
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        filePreviews.value[fieldId] = {
-          name: file.name,
-          url: e.target?.result as string,
-        }
-      }
-      reader.readAsDataURL(file)
-    } else {
+function handleFileChange(fieldId: string, file: File) {
+  formData.value[fieldId] = file
+
+  // 创建预览
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader()
+    reader.onload = e => {
       filePreviews.value[fieldId] = {
         name: file.name,
-        url: '',
+        url: e.target?.result as string,
       }
     }
-  }
-
-  function removeFile(fieldId: string) {
-    delete formData.value[fieldId]
-    delete filePreviews.value[fieldId]
-  }
-
-  function handleSubmit() {
-    if (!isValid.value) {
-      message().warning('请填写所有必填字段')
-      return
+    reader.readAsDataURL(file)
+  } else {
+    filePreviews.value[fieldId] = {
+      name: file.name,
+      url: '',
     }
-    emit('submit', formData.value)
+  }
+}
+
+function removeFile(fieldId: string) {
+  delete formData.value[fieldId]
+  delete filePreviews.value[fieldId]
+}
+
+function handleSubmit() {
+  console.log('[工作流调试-WorkflowConfigModal] handleSubmit 开始')
+  console.log('[工作流调试-WorkflowConfigModal] formSchema:', props.formSchema)
+  console.log('[工作流调试-WorkflowConfigModal] formData:', formData.value)
+  console.log('[工作流调试-WorkflowConfigModal] isValid:', isValid.value)
+
+  if (!isValid.value) {
+    message().warning('请填写所有必填字段')
+    return
   }
 
-  function handleClose() {
-    emit('close')
+  const submitData = {
+    schema: props.formSchema,  // 添加 schema
+    data: formData.value
   }
+  console.log('[工作流调试-WorkflowConfigModal] 提交数据:', submitData)
 
-  function getVariableName(field: FormField): string {
-    return field.variableName || field.id
-  }
+  // 传递 schema 和 data
+  emit('submit', submitData)
+}
+
+function handleClose() {
+  emit('close')
+}
+
+function getVariableName(field: FormField): string {
+  return field.variableName || field.id
+}
 </script>
 
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col mx-4">
+    <div
+      class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col mx-4"
+    >
       <!-- 头部 -->
-      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+      <div
+        class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700"
+      >
         <div class="flex items-center gap-4">
           <img
             v-if="app.coverImg"
@@ -114,8 +134,19 @@
               {{ app.name }}
             </h2>
             <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300">
-                {{ app.appType === 1 ? 'FastGPT' : app.appType === 2 ? 'Dify' : app.appType === 3 ? 'n8n' : '' }} 工作流
+              <span
+                class="text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300"
+              >
+                {{
+                  app.appType === 1
+                    ? 'FastGPT'
+                    : app.appType === 2
+                      ? 'Dify'
+                      : app.appType === 3
+                        ? 'n8n'
+                        : ''
+                }}
+                工作流
               </span>
               <span v-if="formSchema.length > 0" class="text-xs text-gray-500">
                 需要配置 {{ formSchema.length }} 个参数
@@ -138,25 +169,39 @@
         </div>
 
         <div v-else class="space-y-6">
-          <div
-            v-for="field in formSchema"
-            :key="field.id"
-            class="space-y-2"
-          >
-            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div v-for="field in formSchema" :key="field.id" class="space-y-2">
+            <label
+              class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
               {{ field.title }}
               <span v-if="field.required" class="text-red-500">*</span>
-              <span v-if="field.variableName" class="text-xs text-gray-400">
-                (变量: {{ field.variableName }})
+
+              <!-- 显示变量标识 -->
+              <span v-if="field.isVariable" class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">
+                变量
+              </span>
+              <span v-else class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                消息
+              </span>
+
+              <!-- 显示变量名 -->
+              <span v-if="field.variableName && field.isVariable" class="text-xs text-gray-400">
+                ({{ field.variableName }})
               </span>
             </label>
+
+            <!-- 特殊处理"用户提示词"字段提示 -->
+            <div v-if="field.title === '用户提示词' && !field.isVariable"
+                 class="text-xs text-gray-500 mb-2 p-2 bg-gray-50 rounded">
+              此字段表示用户将在聊天框中输入的问题，此处无需填写
+            </div>
 
             <!-- 输入框 -->
             <input
               v-if="field.type === 'input'"
               :type="getVariableName(field) === 'password' ? 'password' : 'text'"
-              :value="formData[field.id] as string || ''"
-              @input="(e) => handleInputChange(field.id, (e.target as HTMLInputElement).value)"
+              :value="(formData[field.id] as string) || ''"
+              @input="e => handleInputChange(field.id, (e.target as HTMLInputElement).value)"
               :placeholder="field.placeholder"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
@@ -164,8 +209,8 @@
             <!-- 下拉选择 -->
             <select
               v-if="field.type === 'select'"
-              :value="formData[field.id] as string || ''"
-              @change="(e) => handleInputChange(field.id, (e.target as HTMLSelectElement).value)"
+              :value="(formData[field.id] as string) || ''"
+              @change="e => handleInputChange(field.id, (e.target as HTMLSelectElement).value)"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">{{ field.placeholder }}</option>
@@ -176,24 +221,35 @@
 
             <!-- 文件上传 -->
             <div v-if="field.type === 'file' || field.type === 'image'">
-              <div v-if="!formData[field.id]" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
+              <div
+                v-if="!formData[field.id]"
+                class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6"
+              >
                 <label class="flex flex-col items-center justify-center cursor-pointer">
                   <Upload class="w-8 h-8 text-gray-400 mb-2" />
                   <span class="text-sm text-gray-600 dark:text-gray-400">
                     点击上传 {{ field.type === 'image' ? '图片' : '文件' }}
                   </span>
                   <span class="text-xs text-gray-400 mt-1">
-                    {{ field.type === 'image' ? '支持 JPG, PNG, GIF, WEBP' : '支持 PDF, DOC, TXT, MD等' }}
+                    {{
+                      field.type === 'image'
+                        ? '支持 JPG, PNG, GIF, WEBP'
+                        : '支持 PDF, DOC, TXT, MD等'
+                    }}
                   </span>
                   <input
                     :type="field.type === 'image' ? 'file' : 'file'"
-                    :accept="field.type === 'image' ? 'image/*' : '.pdf,.doc,.docx,.txt,.md,.markdown'"
+                    :accept="
+                      field.type === 'image' ? 'image/*' : '.pdf,.doc,.docx,.txt,.md,.markdown'
+                    "
                     class="hidden"
-                    @change="(e) => {
-                      const target = e.target as HTMLInputElement
-                      const file = target.files?.[0]
-                      if (file) handleFileChange(field.id, file)
-                    }"
+                    @change="
+                      e => {
+                        const target = e.target as HTMLInputElement
+                        const file = target.files?.[0]
+                        if (file) handleFileChange(field.id, file)
+                      }
+                    "
                   />
                 </label>
               </div>
@@ -210,7 +266,10 @@
                     class="w-12 h-12 object-cover rounded"
                     alt="Preview"
                   />
-                  <div v-else class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                  <div
+                    v-else
+                    class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center"
+                  >
                     <span class="text-xs text-gray-500">
                       {{ field.type === 'image' ? 'IMG' : 'FILE' }}
                     </span>
@@ -230,7 +289,10 @@
               </div>
             </div>
 
-            <p v-if="field.placeholder && field.type !== 'file' && field.type !== 'image'" class="text-xs text-gray-500">
+            <p
+              v-if="field.placeholder && field.type !== 'file' && field.type !== 'image'"
+              class="text-xs text-gray-500"
+            >
               {{ field.placeholder }}
             </p>
           </div>
@@ -238,7 +300,9 @@
       </div>
 
       <!-- 底部 -->
-      <div class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+      <div
+        class="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700"
+      >
         <button
           @click="handleClose"
           class="px-6 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"

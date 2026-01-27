@@ -207,7 +207,6 @@ watch(
 onMounted(async () => {
   try {
     await authStore.getUserInfo()
-    console.log('用户信息获取成功', authStore.userInfo)
   } catch (error) {
     console.error('获取用户信息失败:', error)
   }
@@ -478,10 +477,6 @@ const onConversation = async ({
     usingNetwork: chatStore.usingNetwork,
     usingDeepThinking: chatStore.usingDeepThinking,
   }
-
-  console.log(usingPlugin.value)
-
-  console.log(useModel)
 
   /* 虚拟增加一条ai记录 */
   addGroupChat({
@@ -934,7 +929,6 @@ const onConversation = async ({
                 if (jsonObj.promptReference) promptReference = jsonObj.promptReference
                 if (jsonObj.chatId) {
                   assistantLogId = jsonObj.chatId
-                  console.log('assistantLogId', Number(assistantLogId))
                 }
                 if (jsonObj.finishReason) finishReason = jsonObj.finishReason
 
@@ -950,8 +944,6 @@ const onConversation = async ({
         },
       })
     } catch (error) {
-      console.log('error', error)
-      console.log('error.message', error)
       handleStreamError(error)
     } finally {
       // 标记流已结束
@@ -1221,25 +1213,37 @@ function handleShowMemberDialogFromList() {
 }
 
 // Handle the 'run-app-with-data' event from AppList (via Modal)
-async function handleRunAppWithData({ app, formattedData }: { app: any; formattedData: string }) {
+async function handleRunAppWithData({ app, config }: { app: any; config: Record<string, any> }) {
+  console.log('[工作流调试-chatBase] handleRunAppWithData 开始')
+  console.log('[工作流调试-chatBase] app:', app)
+  console.log('[工作流调试-chatBase] config:', config)
+  console.log('[工作流调试-chatBase] config.schema:', config.schema)
+  console.log('[工作流调试-chatBase] config.data:', config.data)
+
   // Ensure AppList is hidden (might already be hidden by modal logic)
   useGlobalStore.updateShowAppListComponent(false)
 
   // 1. Add the new chat group
   await chatStore.addNewChatGroup(Number(app.id))
-  console.log('app.id', app.id)
 
   // 2. Wait for the chat store to update and potentially the UI to reflect the new group
   //    (Using nextTick might be sufficient, but depends on store logic timing)
   await nextTick()
 
-  // 3. Send the formatted data as the first message in the new chat
+  // 3. 将config对象转换为JSON字符串发送给后端
+  //    后端ChatService会解析此JSON提取variables
+  const formattedData = JSON.stringify(config)
+  console.log('[工作流调试-chatBase] 发送给后端的JSON字符串长度:', formattedData.length)
+  console.log('[工作流调试-chatBase] 发送给后端的JSON前500字符:', formattedData.substring(0, 500))
+
+  // 4. Send the formatted data as the first message in the new chat
   //    Make sure the active group ID is correctly set by addNewChatGroup
   if (chatStore.active === Number(app.id)) {
     // Double-check if active group is the new one
+    console.log('[工作流调试-chatBase] 调用 onConversation，appId:', app.id)
     onConversation({ msg: formattedData, appId: Number(app.id) })
   } else {
-    console.warn('Active chat group did not switch correctly after adding.')
+    console.warn('[工作流调试-chatBase] Active chat group did not switch correctly after adding.')
     // Fallback or error handling if needed
     // Maybe force switch or just send to the current active (might be wrong)
     onConversation({ msg: formattedData })

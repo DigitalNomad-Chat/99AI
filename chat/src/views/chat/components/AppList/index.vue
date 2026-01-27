@@ -14,6 +14,7 @@ import WorkflowConfigModal from '@/components/WorkflowConfigModal/index.vue'
 
 // 接口定义
 interface FormField {
+  id: string
   type: 'input' | 'select' | 'file' | 'image'
   title: string
   placeholder: string
@@ -200,15 +201,40 @@ async function handleRunApp(app: App) {
 
 // 处理工作流配置提交
 function handleWorkflowSubmit(data: Record<string, string | File>) {
-  console.log('工作流配置提交:', data)
+  console.log('[工作流调试-AppList] handleWorkflowSubmit 开始')
+  console.log('[工作流调试-AppList] 接收到的原始data keys:', Object.keys(data))
+  console.log('[工作流调试-AppList] 接收到的原始data:', data)
+  console.log('[工作流调试-AppList] workflowFormSchema:', workflowFormSchema.value)
+
+  // ⚠️ 修复：WorkflowConfigModal 传递的 data 参数实际上包含了 { schema, data } 结构
+  // 需要提取真正的用户填写数据
+  let actualFormData: Record<string, string | File>
+  if ('schema' in data && 'data' in data) {
+    // 新格式：data 包含 { schema, data }
+    actualFormData = (data as any).data
+    console.log('[工作流调试-AppList] 检测到嵌套格式，提取 actualFormData:', actualFormData)
+  } else {
+    // 旧格式：data 直接是表单数据
+    actualFormData = data
+    console.log('[工作流调试-AppList] 使用直接格式')
+  }
+
+  console.log('[工作流调试-AppList] 最终使用的formData keys:', Object.keys(actualFormData))
+  console.log('[工作流调试-AppList] 最终使用的formData:', actualFormData)
+
+  const configData = {
+    schema: workflowFormSchema.value,  // 添加 schema 信息
+    data: actualFormData                 // 用户填写的数据
+  }
+  console.log('[工作流调试-AppList] 发送的完整config:', JSON.stringify(configData, null, 2))
 
   // 关闭弹窗
   showWorkflowModal.value = false
 
-  // 发送运行事件，附带配置数据
+  // 发送运行事件，附带配置数据（包含 schema）
   emit('run-app-with-data', {
     app: currentWorkflowApp.value,
-    config: data
+    config: configData
   })
 
   // 重置状态
@@ -436,9 +462,7 @@ onMounted(() => {
               class="flex items-center justify-between font-semibold text-sm text-gray-800 dark:text-gray-200 mb-0.5"
             >
               <div class="flex items-center gap-2 flex-grow mr-2">
-                <span
-                  class="line-clamp-1 overflow-hidden text-ellipsis block whitespace-nowrap"
-                >
+                <span class="line-clamp-1 overflow-hidden text-ellipsis block whitespace-nowrap">
                   {{ item.name }}
                 </span>
                 <!-- 工作流类型标识 -->

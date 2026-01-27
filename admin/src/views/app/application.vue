@@ -8,7 +8,7 @@ meta:
   import ApiModels from '@/api/modules/models';
   import uploadApi from '@/api/modules/upload';
   import { utcToShanghaiTime } from '@/utils/utcFormatTime';
-  import { Plus, Refresh } from '@element-plus/icons-vue';
+  import { Plus, Refresh, Warning } from '@element-plus/icons-vue';
   import type {
     FormInstance,
     FormRules,
@@ -23,6 +23,7 @@ meta:
   import PromptTemplateEditor from '@/components/PromptTemplateEditor/index.vue';
   import { QUESTION_STATUS_MAP } from '@/constants/index';
   import axios from 'axios';
+  import api from '@/api';
 
   const formRef = ref<FormInstance>();
   const total = ref(0);
@@ -68,6 +69,12 @@ meta:
 
   // 添加特殊模型类型
   const specialModelType = ref('none'); // none, gpts, fastgpt, flowith
+
+  // 表单重置保护标志：防止重置时触发模式切换警告
+  const isResettingForm = ref(false);
+
+  // 模板加载标志：防止加载应用数据时触发模板同步清理
+  const isLoadingTemplate = ref(false);
 
   // ========== 草稿自动保存功能 ==========
   const DRAFT_KEY = 'app_form_draft';
@@ -120,18 +127,36 @@ meta:
   const restoreDraft = () => {
     if (!draftData.value) return;
 
+    // 设置保护标志，防止恢复数据时触发警告
+    isResettingForm.value = true;
+    isLoadingTemplate.value = true;
+
     Object.assign(formPackage, draftData.value.formPackage);
     specialModelType.value = draftData.value.specialModelType;
 
     ElMessage({ type: 'success', message: '草稿已恢复' });
     showDraftRestoreDialog.value = false;
     clearDraft();
+
+    // 在保护标志有效时打开对话框
+    visible.value = true;
+
+    // 对话框打开后清除保护标志
+    nextTick(() => {
+      isResettingForm.value = false;
+      isLoadingTemplate.value = false;
+    });
   };
 
   // 忽略草稿
   const ignoreDraft = () => {
     showDraftRestoreDialog.value = false;
     clearDraft();
+
+    // 继续打开新建对话框（时序修复：使用回调确保保护标志有效）
+    resetFormToDefault(() => {
+      visible.value = true;
+    });
   };
 
   // 监听表单变化自动保存草稿（深度监听）
@@ -197,22 +222,37 @@ meta:
     testingWorkflow.value = true;
     workflowTestResult.value = null;
 
-    try {
-      const response = await fetch('/api/workflow/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          appType: 1,
-          workflowApiUrl: formPackage.workflowApiUrl,
-          workflowApiKey: formPackage.workflowApiKey,
-          workflowAppId: formPackage.workflowAppId,
-        }),
-      });
+    // 构建请求数据
+    const requestData = {
+      appType: 1,
+      workflowApiUrl: formPackage.workflowApiUrl,
+      workflowApiKey: formPackage.workflowApiKey,
+      workflowAppId: formPackage.workflowAppId,
+    };
 
-      const result = await response.json();
+    // ========== 浏览器控制台日志：请求前 ==========
+    console.log('%c========== 工作流测试请求开始 ==========', 'color: #409eff; font-weight: bold');
+    console.log('请求URL:', '/workflow/test');
+    console.log('请求方法:', 'POST');
+    console.log('请求数据:', {
+      ...requestData,
+      workflowApiKey: requestData.workflowApiKey ?
+        `${requestData.workflowApiKey.substring(0, 6)}...${requestData.workflowApiKey.substring(requestData.workflowApiKey.length - 4)}` :
+        '***'
+      });
+    console.log('=====================================');
+
+    try {
+      const result = await api.post('/workflow/test', requestData);
+
+      // ========== 浏览器控制台日志：响应后 ==========
+      console.log('%c========== 工作流测试响应收到 ==========', 'color: #67c23a; font-weight: bold');
+      console.log('完整响应:', result);
+      console.log('响应码:', result.code);
+      console.log('响应消息:', result.message);
+      console.log('响应数据:', result.data);
+      console.log('=====================================');
+
       workflowTestResult.value = {
         success: result.code === 200,
         message: result.message || '测试完成',
@@ -223,10 +263,17 @@ meta:
       } else {
         ElMessage.error('工作流连接测试失败');
       }
-    } catch (error) {
+    } catch (error: any) {
+      // ========== 浏览器控制台日志：错误 ==========
+      console.log('%c========== 工作流测试请求失败 ==========', 'color: #f56c6c; font-weight: bold');
+      console.error('错误对象:', error);
+      console.error('错误响应:', error.response);
+      console.error('错误消息:', error.message);
+      console.log('=====================================');
+
       workflowTestResult.value = {
         success: false,
-        message: `测试失败: ${error.message}`,
+        message: `测试失败: ${error.message || '网络请求失败'}`,
       };
       ElMessage.error('工作流连接测试失败');
     } finally {
@@ -321,6 +368,9 @@ meta:
   }
 
   function handleUpdatePackage(row: any) {
+    isResettingForm.value = true; // 设置保护标志，防止加载应用数据时触发模式切换警告
+    isLoadingTemplate.value = true; // 设置加载标志，防止加载模板时触发同步清理
+
     activeAppCatId.value = row.id;
     isUserApp.value = row.role === 'user';
     userAppStatus.value = row.status;
@@ -425,6 +475,9 @@ meta:
         usePromptTemplate.value = 'plain';
       }
       // --- 结束：处理 prompt 模板 ---
+
+      isResettingForm.value = false; // 数据加载完成后清除保护标志
+      isLoadingTemplate.value = false; // 数据加载完成后清除加载标志
     });
     visible.value = true;
   }
@@ -436,6 +489,7 @@ meta:
     usePromptTemplate.value = 'plain';
     templateFields.value = [];
     // --- 结束：重置模板状态 ---
+
     // 关闭对话框时保存草稿（如果表单有内容）
     if (formPackage.name || formPackage.des || formPackage.catId.length > 0) {
       saveDraft();
@@ -456,12 +510,18 @@ meta:
     }
 
     // 没有草稿，直接打开对话框
-    resetFormToDefault();
-    visible.value = true;
+    // 传入回调函数，在重置完成后打开对话框（时序修复）
+    resetFormToDefault(() => {
+      visible.value = true;
+    });
   }
 
   // 重置表单为默认值
-  function resetFormToDefault() {
+  // callback: 可选的回调函数，在设置 visible 之前执行（确保保护标志仍然有效）
+  function resetFormToDefault(callback?: () => void) {
+    isResettingForm.value = true; // 设置保护标志，防止触发模式切换警告
+    isLoadingTemplate.value = true; // 设置加载标志，防止触发模板同步清理
+
     Object.assign(formPackage, {
       id: '',
       name: '',
@@ -487,9 +547,21 @@ meta:
       workflowApiKey: '',
       workflowAppId: '',
     });
-    specialModelType.value = 'none';
-    usePromptTemplate.value = 'plain';
-    templateFields.value = [];
+
+    nextTick(() => {
+      specialModelType.value = 'none';
+      usePromptTemplate.value = 'plain';
+      templateFields.value = [];
+
+      // 在清除保护标志之前执行回调（如打开对话框）
+      // 确保 visible.value = true 时，isResettingForm 仍然为 true
+      if (callback) {
+        callback();
+      }
+
+      isResettingForm.value = false; // 重置完成后清除保护标志
+      isLoadingTemplate.value = false; // 重置完成后清除加载标志
+    });
   }
 
   async function handleDeletePackage(row: any) {
@@ -662,6 +734,68 @@ meta:
   function handlerSubmit(formEl: FormInstance | undefined) {
     formEl?.validate(async (valid) => {
       if (valid) {
+        // --- 新增：模板字段完整性校验 ---
+        if (usePromptTemplate.value === 'template') {
+          // 检查是否有不完整的字段
+          const incompleteFields = templateFields.value
+            .filter(field => {
+              // 系统字段（如 FastGPT 的用户提示词）不需要校验，因为它们已经有默认值
+              if (field.systemType === 'userPrompt') return false;
+
+              // 检查字段名称和提示文字是否填写
+              return !field.title || !field.title.trim() || !field.placeholder || !field.placeholder.trim();
+            });
+
+          if (incompleteFields.length > 0) {
+            ElMessage({
+              type: 'warning',
+              message: `有 ${incompleteFields.length} 个模板字段未填写完整（字段名称和提示文字为必填项），请完善后再保存。`,
+              duration: 5000,
+            });
+            return; // 阻止保存
+          }
+
+          // 下拉框选项校验
+          const invalidSelectFields = templateFields.value
+            .filter(field => field.type === 'select')
+            .filter(field => {
+              const hasValidOptions = field.options && field.options.some(opt => opt && opt.trim());
+              return !hasValidOptions;
+            });
+
+          if (invalidSelectFields.length > 0) {
+            ElMessage({
+              type: 'warning',
+              message: `有 ${invalidSelectFields.length} 个下拉框字段至少需要一个有效选项，请完善后再保存。`,
+              duration: 5000,
+            });
+            return; // 阻止保存
+          }
+
+          // 变量名校验：当开启"作为工作流变量"时，变量名为必填
+          const missingVariableNameFields = templateFields.value
+            .filter(field => {
+              // 系统字段不需要校验变量名
+              if (field.systemType === 'userPrompt') return false;
+
+              // 文件和图片类型不支持作为变量
+              if (field.type === 'file' || field.type === 'image') return false;
+
+              // 当开启"作为工作流变量"时，检查变量名是否填写
+              return field.isVariable && (!field.variableName || !field.variableName.trim());
+            });
+
+          if (missingVariableNameFields.length > 0) {
+            ElMessage({
+              type: 'warning',
+              message: `有 ${missingVariableNameFields.length} 个字段已开启"作为工作流变量"但未填写变量名，请完善后再保存。`,
+              duration: 5000,
+            });
+            return; // 阻止保存
+          }
+        }
+        // --- 结束：模板字段完整性校验 ---
+
         // --- 新增：处理 prompt 模板提交 ---
         let finalPrompt = formPackage.prompt; // 默认使用文本框内容
         if (usePromptTemplate.value === 'template') {
@@ -799,8 +933,14 @@ meta:
       isVariable?: boolean;
       variableName?: string;
       required?: boolean;
+      systemType?: 'userPrompt' | null;
     }>
   >([]);
+
+  // 模式切换确认对话框状态
+  const showModeSwitchConfirmDialog = ref(false);
+  const pendingModeType = ref<string>('none');
+  const previousModeType = ref<string>('none');
   // --- 结束：新增状态 ---
 
   // --- Synchronization Watchers ---
@@ -811,6 +951,12 @@ meta:
     templateFields,
     (newFields) => {
       if (isUpdatingInternally) return;
+
+      // 加载应用数据时跳过清理逻辑（方案一：模板加载保护标志机制）
+      if (isLoadingTemplate.value) {
+        return;
+      }
+
       if (usePromptTemplate.value === 'template') {
         isUpdatingInternally = true;
         try {
@@ -935,6 +1081,109 @@ meta:
   });
   // --- 结束：监听模板模式切换 ---
 
+  // --- 监听特殊模型类型变化，弹出确认对话框 ---
+  let isUpdatingModeInternally = false;  // 防止无限循环的标志位
+
+  watch(
+    specialModelType,
+    async (newValue, oldValue) => {
+      // 防止递归导致的无限循环
+      if (isUpdatingModeInternally) {
+        isUpdatingModeInternally = false;
+        return;
+      }
+
+      // 表单重置时跳过确认（方案一：保护标志机制）
+      if (isResettingForm.value) {
+        return;
+      }
+
+      // 对话框未打开时跳过确认（补充方案：对话框生命周期检查）
+      // 只在对话框打开且用户正在进行操作时，才检查模式切换
+      if (!visible.value) {
+        return;
+      }
+
+      // 初始化时跳过
+      if (!oldValue || oldValue === 'none' && !newValue) return;
+
+      // 模式确实发生变化
+      if (newValue !== oldValue) {
+        // 保存待切换的模式，并弹出确认对话框
+        pendingModeType.value = newValue;
+        previousModeType.value = oldValue;
+        showModeSwitchConfirmDialog.value = true;
+
+        // 暂时恢复旧值，等待用户确认
+        isUpdatingModeInternally = true;
+        nextTick(() => {
+          specialModelType.value = oldValue;
+        });
+      }
+    },
+    { flush: 'sync' } // 同步执行，确保在设置值时立即触发 watch
+  );
+
+  // 确认切换模式
+  function confirmModeSwitch() {
+    const newMode = pendingModeType.value;
+    const wasFastGPT = previousModeType.value === 'fastgpt';
+    const isFastGPT = newMode === 'fastgpt';
+
+    // 清空模板
+    templateFields.value = [];
+
+    // 根据新模式生成默认模板
+    if (newMode === 'fastgpt') {
+      // FastGPT：自动添加锁定的"用户提示词"字段
+      templateFields.value = [{
+        id: uuidv4(),
+        type: 'input',
+        title: '用户提示词',
+        placeholder: '用户将在聊天框中输入问题，此字段仅用于提示',
+        isVariable: false,
+        variableName: '',
+        required: true,
+        systemType: 'userPrompt',  // 标识为系统字段
+      }];
+      // FastGPT 模式强制使用模板模式
+      usePromptTemplate.value = 'template';
+      ElMessage.success('已切换到 FastGPT 工作流模式');
+    } else {
+      // 其他模式：空模板
+      // 如果从 FastGPT 切换走，保持模板模式，方便用户继续编辑
+      if (!wasFastGPT) {
+        usePromptTemplate.value = 'plain';
+      }
+      ElMessage.success(`已切换到 ${newMode} 模式`);
+    }
+
+    // 更新模式（先设置标志位，防止 watch 拦截）
+    isUpdatingModeInternally = true;
+    specialModelType.value = newMode;
+    showModeSwitchConfirmDialog.value = false;
+  }
+
+  // 取消切换模式
+  function cancelModeSwitch() {
+    // 恢复原值（已通过 nextTick 处理）
+    pendingModeType.value = '';
+    showModeSwitchConfirmDialog.value = false;
+    ElMessage.info('已取消模式切换');
+  }
+
+  // 获取模式类型名称
+  function getModeTypeName(mode: string): string {
+    const names: Record<string, string> = {
+      'none': '不使用',
+      'gpts': 'GPTs',
+      'fastgpt': 'FastGPT 工作流',
+      'flowith': 'Flowith',
+    };
+    return names[mode] || mode;
+  }
+  // --- 结束：监听模式切换 ---
+
   // --- Computed property for placeholder ---
   const plainModePlaceholder = computed(() => {
     return `请按以下JSON格式输入模板，或切换到"模板模式"进行可视化编辑：
@@ -951,6 +1200,16 @@ meta:
     "options": ["选项1", "选项2"]
   }
 ]`;
+  });
+
+  // 判断是否为 FastGPT 工作流模式
+  const isFastGPTMode = computed(() => {
+    return formPackage.appType === 1;
+  });
+
+  // 判断是否应该禁用普通模式
+  const shouldDisablePlainMode = computed(() => {
+    return isFastGPTMode.value;
   });
   // --- End computed property ---
 
@@ -1229,10 +1488,10 @@ meta:
           <el-col :span="12">
             <el-form-item v-if="!isUserApp" label="特殊模型" prop="specialModel">
               <el-radio-group v-model="specialModelType">
-                <el-radio label="none">不使用</el-radio>
-                <el-radio label="gpts">GPTs</el-radio>
-                <el-radio label="fastgpt">FastGPT工作流</el-radio>
-                <el-radio label="flowith" :disabled="true" @click="showDevOnlyMessage"
+                <el-radio value="none">不使用</el-radio>
+                <el-radio value="gpts">GPTs</el-radio>
+                <el-radio value="fastgpt">FastGPT工作流</el-radio>
+                <el-radio value="flowith" :disabled="true" @click="showDevOnlyMessage"
                   >Flowith</el-radio
                 >
               </el-radio-group>
@@ -1429,8 +1688,8 @@ meta:
           <el-col :span="24">
             <el-form-item label="提问模版" prop="prompt">
               <el-radio-group v-model="usePromptTemplate" size="small" class="mb-2">
-                <el-radio-button label="plain">普通模式</el-radio-button>
-                <el-radio-button label="template">模板模式</el-radio-button>
+                <el-radio value="plain" :disabled="shouldDisablePlainMode">普通模式</el-radio>
+                <el-radio value="template">模板模式</el-radio>
               </el-radio-group>
 
               <!-- Container for both modes, use v-show -->
@@ -1449,7 +1708,10 @@ meta:
                   class="border rounded p-3 bg-gray-50"
                   style="min-height: 150px"
                 >
-                  <PromptTemplateEditor v-model="templateFields" />
+                  <PromptTemplateEditor
+                    v-model="templateFields"
+                    :appType="formPackage.appType"
+                  />
                 </div>
               </div>
             </el-form-item>
@@ -1496,6 +1758,35 @@ meta:
           <el-button @click="ignoreDraft">忽略草稿</el-button>
           <el-button type="primary" @click="restoreDraft">恢复草稿</el-button>
         </span>
+      </template>
+    </el-dialog>
+
+    <!-- 模式切换确认对话框 -->
+    <el-dialog
+      v-model="showModeSwitchConfirmDialog"
+      title="⚠️ 警告：切换模式将清空所有模板设置"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div class="text-center py-4">
+        <el-icon class="text-red-500" :size="60" color="#f56c6c">
+          <Warning />
+        </el-icon>
+        <p class="text-gray-700 text-base mt-4">
+          当前模板字段将被全部删除，<strong class="text-red-600">无法恢复</strong>。
+        </p>
+        <p class="text-gray-600 text-sm mt-2">
+          请确认是否继续切换到 <strong>{{ getModeTypeName(pendingModeType) }}</strong> 模式？
+        </p>
+      </div>
+
+      <template #footer>
+        <div class="flex justify-center gap-4">
+          <el-button @click="cancelModeSwitch">取消</el-button>
+          <el-button type="danger" @click="confirmModeSwitch">
+            确认切换
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
