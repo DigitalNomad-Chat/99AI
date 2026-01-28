@@ -325,6 +325,12 @@ const handleSubmit = async (index?: number) => {
     return
   }
 
+  // 写作模式特殊处理
+  if (isWritingMode.value) {
+    await generateArticle()
+    return
+  }
+
   if (chatStore.groupList.length === 0) {
     await createNewChatGroup()
   }
@@ -1390,6 +1396,55 @@ const handleSaveArticle = (article: Omit<Article.Article, 'id' | 'createdAt' | '
   const saved = articleStore.addArticle(article)
   currentArticle.value = saved
   console.log('文章已保存:', saved)
+  ms.success('文章已保存')
+}
+
+// 生成文章函数
+const generateArticle = async () => {
+  if (!prompt.value || prompt.value.trim() === '') {
+    ms.error('请输入写作需求')
+    return
+  }
+
+  try {
+    ms.info('正在生成文章...', 0)
+
+    // 获取token
+    const token = localStorage.getItem('token') || ''
+
+    const response = await fetch('/api/ai/generate-article', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ prompt: prompt.value }),
+    })
+
+    const data = await response.json()
+
+    if (data.success) {
+      const article = {
+        title: data.data.title,
+        content: data.data.content,
+        htmlContent: data.data.htmlContent || data.data.content,
+        status: 'draft' as const,
+      }
+
+      const savedArticle = articleStore.addArticle(article)
+      currentArticle.value = savedArticle
+      showArticleDrawer.value = true
+
+      // 清空输入框
+      await chatStore.setPrompt('')
+      ms.success('文章生成成功！')
+    } else {
+      ms.error(data.message || '文章生成失败')
+    }
+  } catch (error) {
+    console.error('生成文章失败:', error)
+    ms.error('生成文章失败，请重试')
+  }
 }
 
 </script>
