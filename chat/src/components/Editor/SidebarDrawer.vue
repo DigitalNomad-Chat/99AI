@@ -1,6 +1,7 @@
 <template>
-  <transition name="slide-left">
-    <div v-if="visible" class="sidebar-drawer-overlay" @click="handleClose">
+  <teleport to="body">
+    <transition name="slide-left">
+      <div v-if="visible" class="sidebar-drawer-overlay" @click="handleClose">
       <div class="sidebar-drawer" @click.stop>
         <!-- 头部 -->
         <div class="drawer-header">
@@ -61,6 +62,7 @@
       </div>
     </div>
   </transition>
+  </teleport>
 </template>
 
 <script setup lang="ts">
