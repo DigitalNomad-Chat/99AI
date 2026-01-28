@@ -82,6 +82,6 @@ import { ChatService } from './chat.service';
     NetSearchService,
     AppService,
   ],
-  exports: [ChatService],
+  exports: [ChatService, OpenAIChatService, GlobalConfigService],
 })
 export class ChatModule {}
