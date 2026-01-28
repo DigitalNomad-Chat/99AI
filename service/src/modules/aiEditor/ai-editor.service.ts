@@ -123,10 +123,10 @@ export class AiEditorService {
       { role: 'user', content: prompt },
     ];
 
+    let fullResponse = '';
     try {
       const inputs = await this.buildChatInputs();
 
-      let fullResponse = '';
       inputs.onProgress = data => {
         if (data.text || data.content) {
           const chunk = data.text || (Array.isArray(data.content) ? data.content.join('') : '');
@@ -144,8 +144,8 @@ export class AiEditorService {
       // 如果解析失败，返回原始内容
       return {
         title: '生成的文章',
-        content: fullResponse,
-        htmlContent: fullResponse,
+        content: fullResponse || '生成失败',
+        htmlContent: fullResponse || '生成失败',
       };
     }
   }
