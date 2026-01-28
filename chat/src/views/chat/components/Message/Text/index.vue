@@ -1355,7 +1355,10 @@ function getFileName(fileValue: any): string {
           class="workflow-message-container"
         >
           <!-- 用户消息卡片 (主要内容) -->
-          <div v-if="parsedWorkflowMessage.userMessage" class="workflow-main-card">
+          <div
+            v-if="parsedWorkflowMessage.userMessage"
+            class="workflow-main-card"
+          >
             <div class="workflow-card-header">
               <span class="workflow-label">用户消息</span>
             </div>
@@ -1365,7 +1368,10 @@ function getFileName(fileValue: any): string {
           </div>
 
           <!-- 工作流参数卡片 (次要内容) -->
-          <div v-if="parsedWorkflowMessage.variableFields.length > 0" class="workflow-params-card">
+          <div
+            v-if="parsedWorkflowMessage.variableFields.length > 0"
+            class="workflow-params-card"
+          >
             <div class="workflow-card-header">
               <span class="workflow-label workflow-label-secondary">工作流参数</span>
             </div>
@@ -1378,10 +1384,7 @@ function getFileName(fileValue: any): string {
               >
                 <span class="workflow-param-title">{{ item.field.title }}</span>
                 <!-- 文本类型显示 -->
-                <span
-                  v-if="item.field.type === 'input' || item.field.type === 'select'"
-                  class="workflow-param-value"
-                >
+                <span v-if="item.field.type === 'input' || item.field.type === 'select'" class="workflow-param-value">
                   {{ item.value }}
                 </span>
                 <!-- 文件类型显示 -->

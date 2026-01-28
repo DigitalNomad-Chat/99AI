@@ -29,13 +29,10 @@ interface Props {
 }
 
 interface Emits {
-  (
-    e: 'submit',
-    data: {
-      schema: FormField[]
-      data: Record<string, string | File>
-    }
-  ): void
+  (e: 'submit', data: {
+    schema: FormField[]
+    data: Record<string, string | File>
+  }): void
   (e: 'close'): void
 }
 
@@ -98,8 +95,8 @@ function handleSubmit() {
   }
 
   const submitData = {
-    schema: props.formSchema, // 添加 schema
-    data: formData.value,
+    schema: props.formSchema,  // 添加 schema
+    data: formData.value
   }
   console.log('[工作流调试-WorkflowConfigModal] 提交数据:', submitData)
 
@@ -180,10 +177,7 @@ function getVariableName(field: FormField): string {
               <span v-if="field.required" class="text-red-500">*</span>
 
               <!-- 显示变量标识 -->
-              <span
-                v-if="field.isVariable"
-                class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-600"
-              >
+              <span v-if="field.isVariable" class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-600">
                 变量
               </span>
               <span v-else class="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
@@ -197,10 +191,8 @@ function getVariableName(field: FormField): string {
             </label>
 
             <!-- 特殊处理"用户提示词"字段提示 -->
-            <div
-              v-if="field.title === '用户提示词' && !field.isVariable"
-              class="text-xs text-gray-500 mb-2 p-2 bg-gray-50 rounded"
-            >
+            <div v-if="field.title === '用户提示词' && !field.isVariable"
+                 class="text-xs text-gray-500 mb-2 p-2 bg-gray-50 rounded">
               此字段表示用户将在聊天框中输入的问题，此处无需填写
             </div>
 

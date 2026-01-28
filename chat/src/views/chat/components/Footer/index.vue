@@ -5,7 +5,6 @@ import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useAuthStore, useChatStore, useGlobalStoreWithOut } from '@/store'
 import {
   AddPicture,
-  EditOne,
   FullScreen,
   LoadingFour,
   OffScreen,
@@ -23,11 +22,6 @@ import { uploadFile } from '@/api/upload'
 import { message } from '@/utils/message'
 import { computed, inject, nextTick, onMounted, onUnmounted, Ref, ref, watch } from 'vue'
 import FilePreview from './components/FilePreview.vue'
-
-// 写作模式相关导入
-import { useArticleStore } from '@/store/modules/article'
-import type { Article } from '@/components/Editor/types'
-import SidebarDrawer from '@/components/Editor/SidebarDrawer.vue'
 
 interface Emit {
   (ev: 'pause-request'): void
@@ -67,13 +61,6 @@ const extraParam = ref<{
 
 const showSuggestions = ref(false)
 const selectedApp = ref()
-
-// 写作模式相关状态
-const usingWritingMode = ref(false)
-const isWritingMode = computed(() => usingWritingMode.value)
-const articleStore = useArticleStore()
-const showArticleDrawer = ref(false)
-const currentArticle = ref<Article.Article | null>(null)
 const isSelectedApp = ref(false)
 const appList = ref<App[]>([])
 let searchTimeout: string | number | NodeJS.Timeout | null | undefined = null
@@ -322,12 +309,6 @@ const savedFiles = computed(() => {
 
 const handleSubmit = async (index?: number) => {
   if (isStreamIn.value) {
-    return
-  }
-
-  // 写作模式特殊处理
-  if (isWritingMode.value) {
-    await generateArticle()
     return
   }
 
@@ -1092,11 +1073,6 @@ const containerResizeObserver = ref<ResizeObserver | null>(null)
 
 // 计算输入框占位符文本，根据不同工具状态显示不同提示
 const placeholderText = computed(() => {
-  // 写作模式优先
-  if (usingWritingMode.value) {
-    return '输入写作需求，AI将为您生成文章...'
-  }
-
   const activeFeatures = []
 
   // 根据工具状态添加提示
@@ -1391,61 +1367,6 @@ const uploadButtonTooltip = computed(() => {
 const shouldShowButtonText = computed(() => {
   return availableWidth.value > 300 // 当宽度大于300px时显示按钮文字
 })
-
-const handleSaveArticle = (article: Omit<Article.Article, 'id' | 'createdAt' | 'updatedAt'>) => {
-  const saved = articleStore.addArticle(article)
-  currentArticle.value = saved
-  console.log('文章已保存:', saved)
-  ms.success('文章已保存')
-}
-
-// 生成文章函数
-const generateArticle = async () => {
-  if (!prompt.value || prompt.value.trim() === '') {
-    ms.error('请输入写作需求')
-    return
-  }
-
-  try {
-    ms.info('正在生成文章...', 0)
-
-    // 获取token
-    const token = localStorage.getItem('token') || ''
-
-    const response = await fetch('/api/ai/generate-article', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ prompt: prompt.value }),
-    })
-
-    const data = await response.json()
-
-    if (data.success) {
-      const article = {
-        title: data.data.title,
-        content: data.data.content,
-        htmlContent: data.data.htmlContent || data.data.content,
-        status: 'draft' as const,
-      }
-
-      const savedArticle = articleStore.addArticle(article)
-      currentArticle.value = savedArticle
-      showArticleDrawer.value = true
-
-      // 清空输入框
-      await chatStore.setPrompt('')
-      ms.success('文章生成成功！')
-    } else {
-      ms.error(data.message || '文章生成失败')
-    }
-  } catch (error) {
-    console.error('生成文章失败:', error)
-    ms.error('生成文章失败，请重试')
-  }
-}
 </script>
 
 <template>
@@ -1705,22 +1626,6 @@ const generateArticle = async () => {
                   启用图表功能，支持Mermaid图表绘制
                 </div>
               </div>
-
-              <div class="group relative">
-                <div
-                  class="btn-pill btn-md mx-1"
-                  :class="[usingWritingMode ? 'btn-pill-active' : '']"
-                  @click="usingWritingMode = !usingWritingMode"
-                  role="button"
-                  :aria-pressed="usingWritingMode"
-                  aria-label="启用或禁用写作模式"
-                  tabindex="0"
-                >
-                  <EditOne size="15" />
-                  <span v-if="shouldShowButtonText" class="ml-1">写作</span>
-                </div>
-                <div v-if="!isMobile" class="tooltip tooltip-top">AI写作模式，生成结构化文章</div>
-              </div>
             </div>
 
             <div class="flex justify-end items-center mr-1">
@@ -1760,12 +1665,5 @@ const generateArticle = async () => {
 
     <!-- after-footer slot -->
     <slot name="after-footer"></slot>
-
-    <!-- 文章编辑抽屉 -->
-    <SidebarDrawer
-      v-model:visible="showArticleDrawer"
-      :article="currentArticle"
-      @save="handleSaveArticle"
-    />
   </div>
 </template>
