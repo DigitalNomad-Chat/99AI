@@ -8,7 +8,7 @@ import { AiContinueDto } from './dto/ai-continue.dto';
 import { GenerateArticleDto } from './dto/generate-article.dto';
 
 @ApiTags('AI编辑器')
-@Controller('api/ai/editor')
+@Controller('ai/editor')
 export class AiEditorController {
   constructor(private readonly aiEditorService: AiEditorService) {}
 
@@ -38,7 +38,7 @@ export class AiEditorController {
 }
 
 @ApiTags('AI文章生成')
-@Controller('api/ai')
+@Controller('ai')
 export class AiArticleController {
   constructor(private readonly aiEditorService: AiEditorService) {}
 
