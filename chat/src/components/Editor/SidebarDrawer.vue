@@ -59,6 +59,16 @@
             <span class="command-label">{{ command.label }}</span>
           </div>
         </div>
+
+        <!-- AI气泡菜单（划词显示） -->
+        <AiBubbleMenu
+          v-if="editor"
+          :editor="editor"
+          :visible="bubbleMenuVisible"
+          :position="bubbleMenuPosition"
+          @close="bubbleMenuVisible = false"
+          @executing="handleAiExecuting"
+        />
       </div>
     </div>
   </transition>
@@ -68,7 +78,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import TiptapEditor from './TiptapEditor.vue'
-import type { Editor } from '@tiptap/vue-3'
+import AiBubbleMenu from './AiBubbleMenu.vue'
+import type { Editor } from '@tiptap/core'
 import type { Article, AiCommand } from './types'
 
 interface Props {
@@ -89,6 +100,12 @@ const title = ref('')
 const hasSelection = ref(false)
 const aiMenuVisible = ref(false)
 const aiMenuPosition = ref({ x: 0, y: 0 })
+
+// AI气泡菜单相关状态
+const editor = ref<Editor | null>(null)
+const bubbleMenuVisible = ref(false)
+const bubbleMenuPosition = ref({ x: 0, y: 0 })
+const isAiExecuting = ref(false)
 
 const aiMenuStyle = computed(() => ({
   left: `${aiMenuPosition.value.x}px`,
@@ -125,8 +142,29 @@ const handleSave = () => {
   emit('update:visible', false)
 }
 
-const handleSelectionChange = (editor: Editor) => {
-  hasSelection.value = !editor.state.selection.empty
+const handleSelectionChange = (ed: Editor) => {
+  editor.value = ed
+
+  const { from, to, empty } = ed.state.selection
+  hasSelection.value = !empty
+
+  // 显示气泡菜单
+  if (!empty) {
+    const { view } = ed
+    const coords = view.coordsAtPos(from)
+    bubbleMenuPosition.value = {
+      x: coords.left,
+      y: coords.top - 50
+    }
+    bubbleMenuVisible.value = true
+  } else {
+    bubbleMenuVisible.value = false
+  }
+}
+
+const handleAiExecuting = (executing: boolean) => {
+  isAiExecuting.value = executing
+  // 可以添加加载状态UI
 }
 
 const showAiMenu = (event: MouseEvent) => {
