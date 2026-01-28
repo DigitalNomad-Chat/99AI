@@ -33,6 +33,7 @@ import { UserModule } from './modules/user/user.module';
 import { UserBalanceModule } from './modules/userBalance/userBalance.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
+import { AiEditorModule } from './modules/aiEditor/ai-editor.module';
 // global.fetch = fetch; // Disable isomorphic-fetch polyfill
 
 @Global()
@@ -97,6 +98,7 @@ import { WorkflowModule } from './modules/workflow/workflow.module';
     ShareModule,
     SpaModule,
     WorkflowModule,
+    AiEditorModule,
   ],
   providers: [
     {
