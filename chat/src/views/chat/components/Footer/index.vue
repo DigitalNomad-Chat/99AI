@@ -1416,7 +1416,7 @@ const generateArticle = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ prompt: prompt.value }),
     })
@@ -1446,7 +1446,6 @@ const generateArticle = async () => {
     ms.error('生成文章失败，请重试')
   }
 }
-
 </script>
 
 <template>
@@ -1470,10 +1469,7 @@ const generateArticle = async () => {
         @drop="handleDrop"
       >
         <!-- 写作模式切换器 -->
-        <ModeSwitcher
-          v-if="!isStreamIn"
-          @mode-change="handleModeChange"
-        />
+        <ModeSwitcher v-if="!isStreamIn" @mode-change="handleModeChange" />
 
         <div
           class="flex w-full border border-gray-400 dark:border-gray-700 hover:ring-1 hover:ring-primary-500 dark:hover:ring-primary-500 focus-within:ring-1 focus-within:ring-primary-500 dark:focus-within:ring-primary-500 justify-center items-center flex-col rounded-3xl resize-none px-2 transition-all duration-200"
