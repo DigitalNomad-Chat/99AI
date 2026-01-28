@@ -1,9 +1,5 @@
 <template>
-  <div v-if="editorError" class="editor-error">
-    编辑器加载失败：{{ editorError }}
-  </div>
-
-  <div v-else-if="editor" class="tiptap-editor">
+  <div v-if="editor" class="tiptap-editor">
     <!-- 工具栏 -->
     <div v-if="editable" class="editor-toolbar">
       <button
@@ -102,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -112,8 +108,6 @@ import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
 import type { EditorProps, EditorEmits } from './types'
-
-const editorError = ref<string | null>(null)
 
 const props = withDefaults(defineProps<EditorProps>(), {
   placeholder: '请输入内容...',
@@ -152,10 +146,6 @@ const editor = useEditor({
   },
   onSelectionUpdate: ({ editor }) => {
     emit('selection-change', editor)
-  },
-  onError: ({ error }) => {
-    console.error('Editor initialization error:', error)
-    editorError.value = error.message || '编辑器初始化失败'
   }
 })
 
@@ -249,14 +239,5 @@ onBeforeUnmount(() => {
   background: #f9fafb;
   font-size: 12px;
   color: #6b7280;
-}
-
-.editor-error {
-  padding: 16px;
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  text-align: center;
 }
 </style>
