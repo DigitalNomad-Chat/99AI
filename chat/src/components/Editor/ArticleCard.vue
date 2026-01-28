@@ -15,7 +15,7 @@
         </button>
       </div>
     </div>
-    <div class="card-preview" v-html="truncatedContent"></div>
+    <div class="card-preview" v-html="sanitizedContent"></div>
     <div class="card-footer">
       <span class="card-time">{{ formatTime(article.updatedAt) }}</span>
       <span class="card-status">{{ statusText }}</span>
@@ -25,10 +25,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import DOMPurify from 'dompurify'
 import type { Article } from './types'
 
 interface Props {
   article: Article
+  maxLength?: number
 }
 
 interface Emits {
@@ -36,7 +38,11 @@ interface Emits {
   (e: 'delete', id: string): void
 }
 
-const props = defineProps<Props>()
+const DEFAULT_MAX_LENGTH = 150
+
+const props = withDefaults(defineProps<Props>(), {
+  maxLength: DEFAULT_MAX_LENGTH
+})
 const emit = defineEmits<Emits>()
 
 const statusTextMap = {
@@ -47,23 +53,27 @@ const statusTextMap = {
 const statusText = computed(() => statusTextMap[props.article.status])
 
 // 截取预览内容（避免显示过长）
-const truncatedContent = computed(() => {
+const sanitizedContent = computed(() => {
   if (!props.article.htmlContent) return ''
 
-  // 创建临时DOM元素提取文本
-  const temp = document.createElement('div')
-  temp.innerHTML = props.article.htmlContent
+  // 使用DOMPurify清理HTML，防止XSS攻击
+  const cleanHtml = DOMPurify.sanitize(props.article.htmlContent)
 
-  // 获取纯文本并截断
-  const text = temp.textContent || temp.innerText || ''
-  const maxLength = 150
+  // 客户端环境下提取文本长度
+  if (typeof window !== 'undefined') {
+    const temp = document.createElement('div')
+    temp.innerHTML = cleanHtml
+    const text = temp.textContent || temp.innerText || ''
 
-  if (text.length <= maxLength) {
-    return props.article.htmlContent
+    if (text.length <= props.maxLength) {
+      return cleanHtml
+    }
+
+    // 截断后添加省略号（纯文本）
+    return text.substring(0, props.maxLength) + '...'
   }
 
-  // 截断后添加省略号
-  return text.substring(0, maxLength) + '...'
+  return cleanHtml
 })
 
 const formatTime = (date: Date) => {
@@ -195,10 +205,5 @@ const handleDelete = () => {
   border-radius: 4px;
   background: #e5e7eb;
   color: #6b7280;
-}
-
-.card-status:last-child {
-  background: #fef3c7;
-  color: #d97706;
 }
 </style>
