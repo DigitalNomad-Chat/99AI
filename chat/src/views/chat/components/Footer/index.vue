@@ -321,15 +321,26 @@ const savedFiles = computed(() => {
 })
 
 const handleSubmit = async (index?: number) => {
+  console.log('🔍 [handleSubmit] 函数被调用')
+  console.log('  ├─ isStreamIn.value:', isStreamIn.value)
+  console.log('  ├─ isWritingMode.value:', isWritingMode.value)
+  console.log('  ├─ usingWritingMode.value:', usingWritingMode.value)
+  console.log('  └─ prompt.value:', prompt.value?.substring(0, 50) + (prompt.value?.length > 50 ? '...' : ''))
+
   if (isStreamIn.value) {
+    console.log('❌ [handleSubmit] isStreamIn为true，函数直接返回')
     return
   }
 
   // 写作模式特殊处理
   if (isWritingMode.value) {
+    console.log('✅ [handleSubmit] 进入写作模式分支，调用generateArticle()')
     await generateArticle()
+    console.log('✅ [handleSubmit] generateArticle()执行完成')
     return
   }
+
+  console.log('ℹ️ [handleSubmit] 进入普通聊天模式')
 
   if (chatStore.groupList.length === 0) {
     await createNewChatGroup()
@@ -1235,6 +1246,12 @@ const handleFileDropOnButton = async (event: DragEvent, fileType: 'image' | 'doc
 }
 
 onMounted(async () => {
+  console.log('🚀 [Footer Component] 组件已挂载')
+  console.log('  ├─ usingWritingMode.value:', usingWritingMode.value)
+  console.log('  ├─ isWritingMode.value:', isWritingMode.value)
+  console.log('  ├─ isStreamIn.value:', isStreamIn.value)
+  console.log('  └─ chatStore.isStreamIn:', chatStore.isStreamIn)
+
   chatStore.setPrompt('')
 
   // 设置焦点
@@ -1282,6 +1299,14 @@ onUnmounted(() => {
     containerResizeObserver.value.unobserve(buttonContainerRef.value)
     containerResizeObserver.value.disconnect()
   }
+})
+
+// 监听写作模式状态变化
+watch(usingWritingMode, (newValue, oldValue) => {
+  console.log('🔄 [usingWritingMode] 状态变化')
+  console.log('  ├─ 旧值:', oldValue)
+  console.log('  ├─ 新值:', newValue)
+  console.log('  └─ isWritingMode.value:', isWritingMode.value)
 })
 
 // 整合文件拖放处理逻辑
@@ -1401,48 +1426,150 @@ const handleSaveArticle = (article: Omit<Article.Article, 'id' | 'createdAt' | '
 
 // 生成文章函数
 const generateArticle = async () => {
+  console.log('🔍 [generateArticle] 函数被调用')
+  console.log('  ├─ prompt.value:', prompt.value)
+  console.log('  ├─ prompt长度:', prompt.value?.length)
+
   if (!prompt.value || prompt.value.trim() === '') {
+    console.log('❌ [generateArticle] prompt为空，显示错误并返回')
     ms.error('请输入写作需求')
     return
   }
 
+  console.log('✅ [generateArticle] prompt验证通过')
+
   try {
+    console.log('ℹ️ [generateArticle] 显示"正在生成文章..."提示')
     ms.info('正在生成文章...', 0)
 
-    // 获取token
-    const token = localStorage.getItem('token') || ''
+    // 获取token（使用authStore）
+    const token = authStore.token || ''
+    console.log('🔑 [generateArticle] Token信息:')
+    console.log('  ├─ token存在:', !!token)
+    console.log('  ├─ token长度:', token.length)
+    console.log('  ├─ token前10位:', token.substring(0, 10) + '...')
+    console.log('  └─ authStore.token:', authStore.token ? 'exists' : 'undefined')
 
-    const response = await fetch('/api/ai/generate-article', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ prompt: prompt.value }),
-    })
+    const requestBody = { prompt: prompt.value }
+    const apiUrl = `${import.meta.env.VITE_GLOB_API_URL}/ai/generate-article`
+    console.log('📤 [generateArticle] 准备发送请求:')
+    console.log('  ├─ 完整URL:', apiUrl)
+    console.log('  ├─ VITE_GLOB_API_URL:', import.meta.env.VITE_GLOB_API_URL)
+    console.log('  ├─ Method: POST')
+    console.log('  └─ Body:', requestBody)
 
+    // 添加超时控制
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 60000) // 60秒超时
+
+    console.log('⏳ [generateArticle] 开始发送fetch请求...')
+    let response
+    try {
+      response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      })
+      clearTimeout(timeoutId)
+      console.log('📥 [generateArticle] 收到响应:')
+      console.log('  ├─ response.ok:', response.ok)
+      console.log('  ├─ response.status:', response.status)
+      console.log('  ├─ response.statusText:', response.statusText)
+      console.log('  ├─ response.headers:', Object.fromEntries(response.headers.entries()))
+    } catch (fetchError) {
+      clearTimeout(timeoutId)
+      if (fetchError.name === 'AbortError') {
+        console.error('❌ [generateArticle] 请求超时（60秒）')
+        ms.error('请求超时，请重试')
+        return
+      }
+      throw fetchError
+    }
+
+    console.log('⏳ [generateArticle] 开始解析JSON...')
     const data = await response.json()
 
+    console.log('✅ [generateArticle] JSON解析成功:')
+    console.log('  └─ data:', data)
+
     if (data.success) {
-      const article = {
-        title: data.data.title,
-        content: data.data.content,
-        htmlContent: data.data.htmlContent || data.data.content,
+      console.log('✅ [generateArticle] data.success为true，开始处理文章数据')
+      console.log('  └─ data.data:', data.data)
+      console.log('  └─ data.data.data:', data.data.data)
+
+      // 立即打开抽屉，使用打字机效果显示内容
+      const fullContent = data.data.data.content
+      const fullTitle = data.data.data.title
+
+      console.log('📄 [generateArticle] 提取的文章数据:')
+      console.log('  ├─ fullContent:', fullContent)
+      console.log('  ├─ fullContent长度:', fullContent?.length || 0)
+      console.log('  ├─ fullTitle:', fullTitle)
+      console.log('  └─ fullContent前100字符:', fullContent?.substring(0, 100))
+
+      // 创建一个空文章，立即打开抽屉
+      const tempArticle = {
+        title: fullTitle,
+        content: '',  // 初始为空，通过打字机效果填充
+        htmlContent: '',
         status: 'draft' as const,
       }
 
-      const savedArticle = articleStore.addArticle(article)
+      const savedArticle = articleStore.addArticle(tempArticle)
       currentArticle.value = savedArticle
       showArticleDrawer.value = true
 
+      console.log('💾 [generateArticle] 空文章已保存，开始打字机效果')
+
+      // 打字机效果：逐步显示内容
+      const typeWriterEffect = new Promise<void>((resolve) => {
+        let displayIndex = 0
+        const typeSpeed = 10 // 每10ms显示一个字符
+
+        const typeWriter = () => {
+          if (displayIndex < fullContent.length) {
+            // 每次显示多个字符，加快显示速度
+            const chunkSize = 5 // 每次显示5个字符
+            const endIndex = Math.min(displayIndex + chunkSize, fullContent.length)
+            const newContent = fullContent.substring(0, endIndex)
+
+            // 更新文章内容
+            articleStore.updateArticle(savedArticle.id, {
+              content: newContent,
+            })
+
+            displayIndex = endIndex
+            setTimeout(typeWriter, typeSpeed)
+          } else {
+            console.log('✅ [generateArticle] 打字机效果完成')
+            resolve()
+          }
+        }
+
+        // 开始打字机效果
+        setTimeout(typeWriter, 100)
+      })
+
+      // 等待打字机效果完成
+      await typeWriterEffect
+
       // 清空输入框
-      await chatStore.setPrompt('')
+      chatStore.setPrompt('')
       ms.success('文章生成成功！')
     } else {
+      console.log('❌ [generateArticle] data.success为false')
+      console.log('  └─ data.message:', data.message)
       ms.error(data.message || '文章生成失败')
     }
   } catch (error) {
-    console.error('生成文章失败:', error)
+    console.error('❌ [generateArticle] 发生异常:')
+    console.error('  ├─ 错误名称:', error.name)
+    console.error('  ├─ 错误信息:', error.message)
+    console.error('  └─ 错误堆栈:', error.stack)
     ms.error('生成文章失败，请重试')
   }
 }

@@ -38,9 +38,14 @@ export class AiEditorService {
       // 添加进度回调
       let fullResponse = '';
       inputs.onProgress = data => {
-        if (data.text || data.content) {
-          const chunk = data.text || (Array.isArray(data.content) ? data.content.join('') : '');
-          fullResponse += chunk;
+        if (data.content) {
+          if (Array.isArray(data.content)) {
+            // 从对象数组中提取text字段并累加
+            const texts = data.content.map(item => item?.text || '').filter(Boolean);
+            fullResponse += texts.join('');
+          } else if (typeof data.content === 'string') {
+            fullResponse += data.content;
+          }
         }
       };
 
@@ -74,9 +79,14 @@ export class AiEditorService {
 
       let fullResponse = '';
       inputs.onProgress = data => {
-        if (data.text || data.content) {
-          const chunk = data.text || (Array.isArray(data.content) ? data.content.join('') : '');
-          fullResponse += chunk;
+        if (data.content) {
+          if (Array.isArray(data.content)) {
+            // 从对象数组中提取text字段并累加
+            const texts = data.content.map(item => item?.text || '').filter(Boolean);
+            fullResponse += texts.join('');
+          } else if (typeof data.content === 'string') {
+            fullResponse += data.content;
+          }
         }
       };
 
@@ -128,16 +138,30 @@ export class AiEditorService {
       const inputs = await this.buildChatInputs();
 
       inputs.onProgress = data => {
-        if (data.text || data.content) {
-          const chunk = data.text || (Array.isArray(data.content) ? data.content.join('') : '');
-          fullResponse += chunk;
+        if (data.content) {
+          if (Array.isArray(data.content)) {
+            // 从对象数组中提取text字段并累加
+            const texts = data.content.map(item => item?.text || '').filter(Boolean);
+            fullResponse += texts.join('');
+          } else if (typeof data.content === 'string') {
+            fullResponse += data.content;
+          }
         }
       };
 
       await this.openAIChatService.chat(messagesHistory, inputs);
 
       // 解析JSON响应
+      this.logger.log(`[generateArticle] AI原始响应长度: ${fullResponse.length}`);
+      this.logger.log(`[generateArticle] AI原始响应前200字符: ${fullResponse.substring(0, 200)}`);
+
       const result = this.parseArticleResponse(fullResponse);
+
+      this.logger.log(`[generateArticle] 解析后的结果:`);
+      this.logger.log(`  ├─ title: ${result.title}`);
+      this.logger.log(`  ├─ content长度: ${result.content.length}`);
+      this.logger.log(`  └─ content前100字符: ${result.content.substring(0, 100)}`);
+
       return result;
     } catch (error) {
       this.logger.error(`生成文章失败: ${error.message}`);
@@ -192,6 +216,8 @@ ${content}`,
     content: string;
     htmlContent: string;
   } {
+    this.logger.log(`[parseArticleResponse] 开始解析，响应长度: ${response.length}`);
+
     try {
       // 尝试提取JSON（处理markdown代码块）
       const jsonMatch =
@@ -201,15 +227,44 @@ ${content}`,
 
       if (jsonMatch) {
         const jsonStr = jsonMatch[1] || jsonMatch[0];
-        const articleData = JSON.parse(jsonStr);
+        this.logger.log(`[parseArticleResponse] 提取的jsonStr长度: ${jsonStr.length}`);
+        this.logger.log(`[parseArticleResponse] jsonStr前200字符: ${jsonStr.substring(0, 200)}`);
 
-        return {
+        const articleData = JSON.parse(jsonStr);
+        this.logger.log(`[parseArticleResponse] JSON解析成功:`);
+        this.logger.log(`  ├─ articleData.title: ${articleData.title}`);
+        this.logger.log(`  ├─ articleData.content类型: ${typeof articleData.content}`);
+        this.logger.log(`  └─ articleData.content长度: ${articleData.content?.length || 0}`);
+
+        // 处理content：可能是数组或字符串
+        let content = articleData.content || response;
+        if (Array.isArray(content)) {
+          // 如果是数组，尝试将每个元素转换为字符串并连接
+          content = content.map(item => {
+            if (typeof item === 'string') return item;
+            if (typeof item === 'object') return JSON.stringify(item);
+            return String(item);
+          }).join('\n\n');
+        } else if (typeof content !== 'string') {
+          // 如果不是字符串也不是数组，转换为字符串
+          content = String(content);
+        }
+
+        const result = {
           title: articleData.title || '未命名文章',
-          content: articleData.content || response,
-          htmlContent: articleData.content || response,
+          content: content,
+          htmlContent: content,
         };
+
+        this.logger.log(`[parseArticleResponse] 最终返回:`);
+        this.logger.log(`  ├─ title: ${result.title}`);
+        this.logger.log(`  ├─ content长度: ${result.content.length}`);
+        this.logger.log(`  └─ content前100字符: ${result.content.substring(0, 100)}`);
+
+        return result;
       }
 
+      this.logger.warn(`[parseArticleResponse] 未找到JSON格式，返回原始内容`);
       // 如果没有找到JSON，返回原始内容
       return {
         title: '生成的文章',
@@ -217,7 +272,8 @@ ${content}`,
         htmlContent: response,
       };
     } catch (error) {
-      this.logger.warn(`解析文章响应失败: ${error.message}`);
+      this.logger.error(`[parseArticleResponse] 解析失败: ${error.message}`);
+      this.logger.error(`[parseArticleResponse] 错误堆栈: ${error.stack}`);
       return {
         title: '生成的文章',
         content: response,

@@ -6,19 +6,38 @@
           <!-- 头部 -->
           <div class="drawer-header">
             <h3 class="drawer-title">{{ title || '文章编辑' }}</h3>
-            <button class="close-button" @click="handleClose">
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path
-                  fill="currentColor"
-                  d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-                />
-              </svg>
-            </button>
+            <div class="header-actions">
+              <button class="mode-toggle-button" @click="toggleEditMode">
+                <svg v-if="!isEditingMode" width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                <svg v-else width="16" height="16" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+                {{ isEditingMode ? '预览' : '编辑' }}
+              </button>
+              <button class="close-button" @click="handleClose">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <!-- 编辑器区域 -->
           <div class="drawer-content">
+            <!-- 预览模式：使用v-html渲染Markdown -->
+            <div
+              v-if="!isEditingMode"
+              class="markdown-body preview-content"
+              v-html="previewContent"
+            ></div>
+            <!-- 编辑模式：使用TipTap富文本编辑器 -->
             <TiptapEditor
+              v-else
               v-model="articleContent"
               :placeholder="'请输入文章内容...'"
               :editable="true"
@@ -74,11 +93,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import TiptapEditor from './TiptapEditor.vue'
 import AiBubbleMenu from './AiBubbleMenu.vue'
 import type { Editor } from '@tiptap/core'
 import type { Article, AiCommand } from './types'
+import MarkdownIt from 'markdown-it'
+import mdKatex from '@traptitech/markdown-it-katex'
+import hljs from 'highlight.js'
+
+// 复用项目现有的MarkdownIt配置
+const mdi = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  highlight(code, language) {
+    const validLang = !!(language && hljs.getLanguage(language))
+    if (validLang) {
+      const lang = language ?? ''
+      // 简化的代码高亮（与项目保持一致）
+      return `<pre><code class="hljs language-${lang}">${hljs.highlight(code, { language: lang }).value}</code></pre>`
+    }
+    return `<pre><code class="hljs">${hljs.highlightAuto(code).value}</code></pre>`
+  },
+})
+
+// 添加LaTeX支持
+mdi.use(mdKatex)
 
 interface Props {
   visible: boolean
@@ -93,7 +134,11 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+// 编辑模式状态
+const isEditingMode = ref(false)
+
 const articleContent = ref('')
+const articleMarkdown = ref('')  // 保存原始Markdown
 const title = ref('')
 const hasSelection = ref(false)
 const aiMenuVisible = ref(false)
@@ -118,17 +163,57 @@ const aiCommands: AiCommand[] = [
   { id: 'polish', label: '润色', prompt: '请对选中的内容进行润色优化', icon: '✨' },
 ]
 
+// 转换markdown为HTML（预览模式）
+const renderMarkdownHtml = (markdown: string) => {
+  if (!markdown) return ''
+  try {
+    // 复用项目现有的处理逻辑
+    let modifiedValue = markdown
+      .replace(/\\\(\s*/g, '$')
+      .replace(/\s*\\\)/g, '$')
+      .replace(/\\\[\s*/g, '$$')
+      .replace(/\s*\\\]/g, '$$')
+      .replace(
+        /\[\[(\d+)\]\((https?:\/\/[^\)]+)\)\]/g,
+        '<button class="bg-gray-500 text-white rounded-full w-4 h-4 mx-1 flex justify-center items-center text-sm hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-500 inline-flex" onclick="window.open(\'$2\', \'_blank\')">$1</button>'
+      )
+    return mdi.render(modifiedValue)
+  } catch (error) {
+    console.error('Markdown渲染失败:', error)
+    return markdown
+  }
+}
+
+// 计算属性：预览内容（HTML）
+const previewContent = computed(() => {
+  return renderMarkdownHtml(articleMarkdown.value)
+})
+
 // 监听文章变化
 watch(
   () => props.article,
   article => {
     if (article) {
-      articleContent.value = article.content
+      articleMarkdown.value = article.content || ''
       title.value = article.title
+      // 默认使用预览模式
+      isEditingMode.value = false
     }
   },
   { immediate: true }
 )
+
+// 切换编辑模式
+const toggleEditMode = () => {
+  isEditingMode.value = !isEditingMode.value
+  if (isEditingMode.value) {
+    // 切换到编辑模式：将HTML转换为Markdown（简化版，直接使用原始markdown）
+    articleContent.value = articleMarkdown.value
+  } else {
+    // 切换到预览模式：渲染为HTML
+    articleContent.value = previewContent.value
+  }
+}
 
 const handleClose = () => {
   emit('update:visible', false)
@@ -220,6 +305,32 @@ const handleAiCommand = async (command: AiCommand) => {
   color: #1f2937;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-toggle-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #6b7280;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-toggle-button:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
 .close-button {
   width: 32px;
   height: 32px;
@@ -239,7 +350,113 @@ const handleAiCommand = async (command: AiCommand) => {
 
 .drawer-content {
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* 预览内容区域样式 */
+.preview-content {
+  line-height: 1.7;
+  color: #374151;
+}
+
+/* Markdown样式复用项目全局样式 */
+.markdown-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  word-wrap: break-word;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.3em;
+}
+
+.markdown-body h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.3em;
+}
+
+.markdown-body p {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.markdown-body code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 6px;
+}
+
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+  margin-bottom: 16px;
+}
+
+.markdown-body blockquote {
+  padding: 0 1em;
+  color: #6b7280;
+  border-left: 0.25em solid #e5e7eb;
+  margin: 0 0 16px 0;
+}
+
+.markdown-body table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid #e5e7eb;
+}
+
+.markdown-body table th {
+  font-weight: 600;
+  background-color: #f6f8fa;
 }
 
 .drawer-footer {
