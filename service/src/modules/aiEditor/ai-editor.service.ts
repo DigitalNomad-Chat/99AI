@@ -37,7 +37,7 @@ export class AiEditorService {
 
       // 添加进度回调
       let fullResponse = '';
-      inputs.onProgress = (data) => {
+      inputs.onProgress = data => {
         if (data.text || data.content) {
           const chunk = data.text || (Array.isArray(data.content) ? data.content.join('') : '');
           fullResponse += chunk;
@@ -73,7 +73,7 @@ export class AiEditorService {
       const inputs = await this.buildChatInputs();
 
       let fullResponse = '';
-      inputs.onProgress = (data) => {
+      inputs.onProgress = data => {
         if (data.text || data.content) {
           const chunk = data.text || (Array.isArray(data.content) ? data.content.join('') : '');
           fullResponse += chunk;
@@ -92,7 +92,10 @@ export class AiEditorService {
   /**
    * 生成文章
    */
-  async generateArticle(dto: GenerateArticleDto, userId: number): Promise<{
+  async generateArticle(
+    dto: GenerateArticleDto,
+    userId: number,
+  ): Promise<{
     title: string;
     content: string;
     htmlContent: string;
@@ -124,7 +127,7 @@ export class AiEditorService {
       const inputs = await this.buildChatInputs();
 
       let fullResponse = '';
-      inputs.onProgress = (data) => {
+      inputs.onProgress = data => {
         if (data.text || data.content) {
           const chunk = data.text || (Array.isArray(data.content) ? data.content.join('') : '');
           fullResponse += chunk;
@@ -191,9 +194,10 @@ ${content}`,
   } {
     try {
       // 尝试提取JSON（处理markdown代码块）
-      const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) ||
-                        response.match(/```\s*([\s\S]*?)\s*```/) ||
-                        response.match(/\{[\s\S]*\}/);
+      const jsonMatch =
+        response.match(/```json\s*([\s\S]*?)\s*```/) ||
+        response.match(/```\s*([\s\S]*?)\s*```/) ||
+        response.match(/\{[\s\S]*\}/);
 
       if (jsonMatch) {
         const jsonStr = jsonMatch[1] || jsonMatch[0];
@@ -227,15 +231,12 @@ ${content}`,
    */
   private async buildChatInputs(): Promise<any> {
     // 获取全局配置
-    const {
-      openaiBaseUrl,
-      openaiBaseKey,
-      openaiBaseModel,
-    } = await this.globalConfigService.getConfigs([
-      'openaiBaseUrl',
-      'openaiBaseKey',
-      'openaiBaseModel',
-    ]);
+    const { openaiBaseUrl, openaiBaseKey, openaiBaseModel } =
+      await this.globalConfigService.getConfigs([
+        'openaiBaseUrl',
+        'openaiBaseKey',
+        'openaiBaseModel',
+      ]);
 
     return {
       chatId: `ai_editor_${Date.now()}`,

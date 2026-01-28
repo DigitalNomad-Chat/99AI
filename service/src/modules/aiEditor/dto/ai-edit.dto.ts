@@ -10,12 +10,12 @@ export enum AiCommand {
 }
 
 export class AiEditDto {
-  @ApiModelProperty({ description: '要编辑的内容', example: '这是一段需要改写的文字。' })
+  @ApiProperty({ description: '要编辑的内容', example: '这是一段需要改写的文字。' })
   @IsString()
   @IsNotEmpty()
   content: string;
 
-  @ApiModelProperty({
+  @ApiProperty({
     description: 'AI命令类型',
     enum: AiCommand,
     example: AiCommand.REWRITE,
@@ -24,7 +24,7 @@ export class AiEditDto {
   @IsNotEmpty()
   command: AiCommand;
 
-  @ApiModelProperty({
+  @ApiProperty({
     description: '自定义提示词（可选，覆盖默认prompt）',
     required: false,
   })

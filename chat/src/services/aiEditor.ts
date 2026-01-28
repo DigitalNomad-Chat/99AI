@@ -35,7 +35,7 @@ export async function executeAiCommand(options: AiExecuteOptions) {
     const response = await fetchAiEditAPI({
       content: selectedText,
       command,
-      prompt
+      prompt,
     })
 
     if (response.success) {

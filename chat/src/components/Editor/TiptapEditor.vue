@@ -8,7 +8,10 @@
         title="粗体"
       >
         <svg width="20" height="20" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M8 11h4.5a2.5 2.5 0 0 0 0-5H8v5zm10 4.5a4.5 4.5 0 0 1-4.5 4.5H6V4h6.5a4.5 4.5 0 0 1 3.256 7.606A4.498 4.498 0 0 1 18 15.5zM8 13v5h5.5a2.5 2.5 0 0 0 0-5H8z"/>
+          <path
+            fill="currentColor"
+            d="M8 11h4.5a2.5 2.5 0 0 0 0-5H8v5zm10 4.5a4.5 4.5 0 0 1-4.5 4.5H6V4h6.5a4.5 4.5 0 0 1 3.256 7.606A4.498 4.498 0 0 1 18 15.5zM8 13v5h5.5a2.5 2.5 0 0 0 0-5H8z"
+          />
         </svg>
       </button>
       <button
@@ -17,7 +20,7 @@
         title="斜体"
       >
         <svg width="20" height="20" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M15 20H7v-2h2.927l2.116-12H9V4h8v2h-2.927l-2.116 12H15z"/>
+          <path fill="currentColor" d="M15 20H7v-2h2.927l2.116-12H9V4h8v2h-2.927l-2.116 12H15z" />
         </svg>
       </button>
       <button
@@ -26,7 +29,7 @@
         title="删除线"
       >
         <svg width="20" height="20" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M3 12h18v2H3z"/>
+          <path fill="currentColor" d="M3 12h18v2H3z" />
         </svg>
       </button>
       <div class="toolbar-divider"></div>
@@ -58,7 +61,10 @@
         title="无序列表"
       >
         <svg width="20" height="20" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M8 4h13v2H8V4zM5 3v3h1v1H3V6h1V4H3V3h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zM8 11h13v2H8v-2zm0 7h13v2H8v-2z"/>
+          <path
+            fill="currentColor"
+            d="M8 4h13v2H8V4zM5 3v3h1v1H3V6h1V4H3V3h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zM8 11h13v2H8v-2zm0 7h13v2H8v-2z"
+          />
         </svg>
       </button>
       <button
@@ -67,7 +73,10 @@
         title="有序列表"
       >
         <svg width="20" height="20" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M8 4h13v2H8V4zM5 3v3h1v1H3V6h1V4H3V3h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zM8 11h13v2H8v-2zm0 7h13v2H8v-2z"/>
+          <path
+            fill="currentColor"
+            d="M8 4h13v2H8V4zM5 3v3h1v1H3V6h1V4H3V3h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zm0 7v3h1v1H3v-1h1v-2H3v-1h2zM8 11h13v2H8v-2zm0 7h13v2H8v-2z"
+          />
         </svg>
       </button>
       <div class="toolbar-divider"></div>
@@ -77,7 +86,10 @@
         title="代码块"
       >
         <svg width="20" height="20" viewBox="0 0 24 24">
-          <path fill="currentColor" d="M24 10.933v2.134l-8 5.333-1.067-1.6L20.8 12l-5.867-4.8L16 5.6l8 5.333zm-16 0L0 5.6l1.067 1.6L6.933 12l-5.866 4.8L0 16.4l8-5.467z"/>
+          <path
+            fill="currentColor"
+            d="M24 10.933v2.134l-8 5.333-1.067-1.6L20.8 12l-5.867-4.8L16 5.6l8 5.333zm-16 0L0 5.6l1.067 1.6L6.933 12l-5.866 4.8L0 16.4l8-5.467z"
+          />
         </svg>
       </button>
     </div>
@@ -90,9 +102,7 @@
       <span v-if="characterLimit" class="character-count">
         {{ editor.storage.characterCount.characters() }} / {{ characterLimit }}
       </span>
-      <span v-else class="word-count">
-        {{ editor.storage.characterCount.words() }} 字
-      </span>
+      <span v-else class="word-count"> {{ editor.storage.characterCount.words() }} 字 </span>
     </div>
   </div>
 </template>
@@ -112,7 +122,7 @@ import type { EditorProps, EditorEmits } from './types'
 const props = withDefaults(defineProps<EditorProps>(), {
   placeholder: '请输入内容...',
   editable: true,
-  characterLimit: undefined
+  characterLimit: undefined,
 })
 
 const emit = defineEmits<EditorEmits>()
@@ -124,21 +134,21 @@ const editor = useEditor({
   editable: props.editable,
   extensions: [
     StarterKit.configure({
-      codeBlock: false
+      codeBlock: false,
     }),
     Placeholder.configure({
-      placeholder: props.placeholder
+      placeholder: props.placeholder,
     }),
     CharacterCount.configure({
-      limit: props.characterLimit
+      limit: props.characterLimit,
     }),
     Link.configure({
-      openOnClick: false
+      openOnClick: false,
     }),
     Image,
     CodeBlockLowlight.configure({
-      lowlight
-    })
+      lowlight,
+    }),
   ],
   onUpdate: ({ editor }) => {
     const html = editor.getHTML()
@@ -146,15 +156,18 @@ const editor = useEditor({
   },
   onSelectionUpdate: ({ editor }) => {
     emit('selection-change', editor)
-  }
+  },
 })
 
 // 监听外部内容变化
-watch(() => props.modelValue, (value) => {
-  if (editor.value && value !== editor.value.getHTML()) {
-    editor.value.commands.setContent(value, false)
+watch(
+  () => props.modelValue,
+  value => {
+    if (editor.value && value !== editor.value.getHTML()) {
+      editor.value.commands.setContent(value, false)
+    }
   }
-})
+)
 
 onBeforeUnmount(() => {
   editor.value?.destroy()

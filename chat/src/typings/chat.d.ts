@@ -173,4 +173,3 @@ export interface ArticleStore {
   articles: Record<string, Article.Article>
   currentArticleId: string | null
 }
-

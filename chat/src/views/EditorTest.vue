@@ -4,10 +4,7 @@
 
     <div class="test-section">
       <h2>基础编辑器</h2>
-      <TiptapEditor
-        v-model="content"
-        placeholder="请输入内容测试编辑器..."
-      />
+      <TiptapEditor v-model="content" placeholder="请输入内容测试编辑器..." />
     </div>
 
     <div class="test-section">
@@ -22,11 +19,7 @@
 
     <div class="test-section">
       <h2>文章卡片</h2>
-      <ArticleCard
-        :article="testArticle"
-        @edit="handleEditArticle"
-        @delete="handleDeleteArticle"
-      />
+      <ArticleCard :article="testArticle" @edit="handleEditArticle" @delete="handleDeleteArticle" />
     </div>
 
     <div class="test-section">
@@ -53,7 +46,7 @@ const testArticle = ref<Article.Article>({
   htmlContent: content.value,
   createdAt: new Date(),
   updatedAt: new Date(),
-  status: 'draft'
+  status: 'draft',
 })
 
 const handleSaveArticle = (article: Omit<Article.Article, 'id' | 'createdAt' | 'updatedAt'>) => {

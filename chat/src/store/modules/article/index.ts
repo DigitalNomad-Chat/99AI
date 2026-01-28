@@ -6,7 +6,8 @@ export const useArticleStore = defineStore(ARTICLE_KEY, {
 
   getters: {
     articlesList: state => Object.values(state.articles),
-    currentArticle: state => state.currentArticleId ? state.articles[state.currentArticleId] : null
+    currentArticle: state =>
+      state.currentArticleId ? state.articles[state.currentArticleId] : null,
   },
 
   actions: {
@@ -17,7 +18,7 @@ export const useArticleStore = defineStore(ARTICLE_KEY, {
         id,
         createdAt: now,
         updatedAt: now,
-        ...article
+        ...article,
       }
       this.articles[id] = newArticle
       this.currentArticleId = id
@@ -30,7 +31,7 @@ export const useArticleStore = defineStore(ARTICLE_KEY, {
         this.articles[id] = {
           ...this.articles[id],
           ...updates,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
         setLocalState(this.$state)
       }
@@ -51,6 +52,6 @@ export const useArticleStore = defineStore(ARTICLE_KEY, {
 
     getArticle(id: string) {
       return this.articles[id]
-    }
-  }
+    },
+  },
 })

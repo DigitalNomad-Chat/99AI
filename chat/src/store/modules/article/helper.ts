@@ -13,13 +13,13 @@ export function getLocalState(): ArticleStorage {
     } catch {
       return {
         articles: {},
-        currentArticleId: null
+        currentArticleId: null,
       }
     }
   }
   return {
     articles: {},
-    currentArticleId: null
+    currentArticleId: null,
   }
 }
 

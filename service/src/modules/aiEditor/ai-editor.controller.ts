@@ -1,13 +1,7 @@
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/auth/jwtAuth.guard';
 import { AiEditorService } from './ai-editor.service';
-import {
-  Body,
-  Controller,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { AiEditDto } from './dto/ai-edit.dto';
 import { AiContinueDto } from './dto/ai-continue.dto';

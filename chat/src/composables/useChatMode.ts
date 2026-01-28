@@ -14,7 +14,7 @@ const modeConfigs: Record<ChatMode, ModeConfig> = {
     label: '💬 普通聊天',
     placeholder: '输入您的问题...',
     icon: '💬',
-    systemPrompt: '你是一个专业的AI助手，帮助用户解答问题。'
+    systemPrompt: '你是一个专业的AI助手，帮助用户解答问题。',
   },
   writing: {
     label: '✨ 帮我写作',
@@ -30,14 +30,14 @@ const modeConfigs: Record<ChatMode, ModeConfig> = {
   "content": "文章正文（支持Markdown格式）",
   "outline": ["要点1", "要点2", ...],
   "tags": ["标签1", "标签2"]
-}`
+}`,
   },
   thinking: {
     label: '🔧 深度思考',
     placeholder: '提出复杂问题，AI将深度分析...',
     icon: '🔧',
-    systemPrompt: '你是一个深度思考助手，擅长复杂问题的分析和推理。'
-  }
+    systemPrompt: '你是一个深度思考助手，擅长复杂问题的分析和推理。',
+  },
 }
 
 export function useChatMode() {
@@ -56,6 +56,6 @@ export function useChatMode() {
     setMode,
     config: currentConfig,
     isWritingMode,
-    allModes: Object.entries(modeConfigs) as [ChatMode, ModeConfig][]
+    allModes: Object.entries(modeConfigs) as [ChatMode, ModeConfig][],
   }
 }
