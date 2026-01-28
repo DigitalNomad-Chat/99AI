@@ -156,3 +156,21 @@ declare namespace Chat {
     text: string
   }
 }
+
+declare namespace Article {
+  export interface Article {
+    id: string
+    title: string
+    content: string
+    htmlContent: string
+    createdAt: Date
+    updatedAt: Date
+    status: 'draft' | 'published'
+  }
+}
+
+export interface ArticleStore {
+  articles: Record<string, Article.Article>
+  currentArticleId: string | null
+}
+
