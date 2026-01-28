@@ -5,6 +5,7 @@ import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useAuthStore, useChatStore, useGlobalStoreWithOut } from '@/store'
 import {
   AddPicture,
+  EditOne,
   FullScreen,
   LoadingFour,
   OffScreen,
@@ -24,8 +25,6 @@ import { computed, inject, nextTick, onMounted, onUnmounted, Ref, ref, watch } f
 import FilePreview from './components/FilePreview.vue'
 
 // 写作模式相关导入
-import { ModeSwitcher } from '@/components/WritingMode'
-import { useChatMode } from '@/composables/useChatMode'
 import { useArticleStore } from '@/store/modules/article'
 import type { Article } from '@/components/Editor/types'
 import SidebarDrawer from '@/components/Editor/SidebarDrawer.vue'
@@ -70,7 +69,8 @@ const showSuggestions = ref(false)
 const selectedApp = ref()
 
 // 写作模式相关状态
-const { config: modeConfig, isWritingMode } = useChatMode()
+const usingWritingMode = ref(false)
+const isWritingMode = computed(() => usingWritingMode.value)
 const articleStore = useArticleStore()
 const showArticleDrawer = ref(false)
 const currentArticle = ref<Article.Article | null>(null)
@@ -1092,6 +1092,11 @@ const containerResizeObserver = ref<ResizeObserver | null>(null)
 
 // 计算输入框占位符文本，根据不同工具状态显示不同提示
 const placeholderText = computed(() => {
+  // 写作模式优先
+  if (usingWritingMode.value) {
+    return '输入写作需求，AI将为您生成文章...'
+  }
+
   const activeFeatures = []
 
   // 根据工具状态添加提示
@@ -1387,11 +1392,6 @@ const shouldShowButtonText = computed(() => {
   return availableWidth.value > 300 // 当宽度大于300px时显示按钮文字
 })
 
-// 写作模式处理函数
-const handleModeChange = (mode: 'chat' | 'writing' | 'thinking') => {
-  console.log('模式切换:', mode)
-}
-
 const handleSaveArticle = (article: Omit<Article.Article, 'id' | 'createdAt' | 'updatedAt'>) => {
   const saved = articleStore.addArticle(article)
   currentArticle.value = saved
@@ -1468,9 +1468,6 @@ const generateArticle = async () => {
         @dragleave="handleDragLeave"
         @drop="handleDrop"
       >
-        <!-- 写作模式切换器 -->
-        <ModeSwitcher v-if="!isStreamIn" @mode-change="handleModeChange" />
-
         <div
           class="flex w-full border border-gray-400 dark:border-gray-700 hover:ring-1 hover:ring-primary-500 dark:hover:ring-primary-500 focus-within:ring-1 focus-within:ring-primary-500 dark:focus-within:ring-primary-500 justify-center items-center flex-col rounded-3xl resize-none px-2 transition-all duration-200"
           :class="{
@@ -1707,6 +1704,22 @@ const generateArticle = async () => {
                 <div v-if="!isMobile" class="tooltip tooltip-top">
                   启用图表功能，支持Mermaid图表绘制
                 </div>
+              </div>
+
+              <div class="group relative">
+                <div
+                  class="btn-pill btn-md mx-1"
+                  :class="[usingWritingMode ? 'btn-pill-active' : '']"
+                  @click="usingWritingMode = !usingWritingMode"
+                  role="button"
+                  :aria-pressed="usingWritingMode"
+                  aria-label="启用或禁用写作模式"
+                  tabindex="0"
+                >
+                  <EditOne size="15" />
+                  <span v-if="shouldShowButtonText" class="ml-1">写作</span>
+                </div>
+                <div v-if="!isMobile" class="tooltip tooltip-top">AI写作模式，生成结构化文章</div>
               </div>
             </div>
 
