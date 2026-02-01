@@ -501,6 +501,7 @@ export class ModelsService {
         systemPrompt: modelDetail.systemPrompt,
         systemPromptType: modelDetail.systemPromptType,
         drawingType: modelDetail.drawingType,
+        isApiAvailable: modelDetail.isApiAvailable,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -509,5 +510,64 @@ export class ModelsService {
       Logger.error(`获取模型详情失败: ${error.message}`, 'ModelsService');
       throw new HttpException('获取模型详情失败', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  /**
+   * 通过模型名称获取模型实体（用于开放API）
+   * @param model 模型名称
+   * @returns 模型实体或null
+   */
+  async getModelByName(model: string): Promise<ModelsEntity | null> {
+    return this.modelsEntity.findOne({
+      where: { model, status: true },
+    });
+  }
+
+  /**
+   * 获取可用于开放API的模型列表
+   * @returns 模型列表
+   */
+  async getApiAvailableModels() {
+    console.log('[ModelsService] getApiAvailableModels called');
+
+    const models = await this.modelsEntity.find({
+      where: { status: true },
+      select: [
+        'id',
+        'model',
+        'modelName',
+        'deduct',
+        'deductType',
+        'maxModelTokens',
+        'isApiAvailable',
+        'modelAvatar',
+        'modelDescription',
+      ],
+      order: { modelOrder: 'ASC' },
+    });
+
+    console.log('[ModelsService] Found models from DB:', models.length);
+    console.log('[ModelsService] Models data:', JSON.stringify(models.map(m => ({
+      model: m.model,
+      modelName: m.modelName,
+      isApiAvailable: m.isApiAvailable,
+      type: typeof m.isApiAvailable,
+    }))));
+
+    // 过滤出可用于开放API的模型，返回前端需要的格式
+    // 注意：isApiAvailable在数据库中为tinyint(1)，TypeORM返回数字1而非布尔true
+    const filtered = models
+      .filter(m => m.isApiAvailable === true || m.isApiAvailable === 1);
+
+    console.log('[ModelsService] Filtered models:', filtered.length);
+
+    const result = filtered.map(m => ({
+      id: m.model,
+      model: m.model,
+      modelName: m.modelName,
+    }));
+
+    console.log('[ModelsService] Returning result:', result);
+    return result;
   }
 }

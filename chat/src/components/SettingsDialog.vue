@@ -84,6 +84,7 @@ import { dialog } from '@/utils/dialog'
 import { Close } from '@icon-park/vue-next' // Only Close icon needed now
 import { computed, markRaw, nextTick, onMounted, ref, watch } from 'vue'
 import AccountManagement from './Settings/AccountManagement.vue'
+import ApiKeyManagement from './Settings/ApiKeyManagement.vue'
 import MemberCenter from './Settings/MemberCenter.vue'
 import NoticeDialog from './Settings/NoticeDialog.vue'
 import UserAgreement from './Settings/UserAgreement.vue'
@@ -103,6 +104,7 @@ const tabs = computed(() => {
   const baseTabs = [
     { name: '账户管理', component: markRaw(AccountManagement) },
     { name: '会员中心', component: markRaw(MemberCenter) },
+    { name: 'API Keys', component: markRaw(ApiKeyManagement) },
     // { name: '数据管理', component: markRaw(DataManagement) },
     { name: '网站公告', component: markRaw(NoticeDialog) },
   ]

@@ -15,6 +15,7 @@ service.interceptors.request.use(
     config.headers['X-Website-Domain'] = currentDomain
     fingerprint && (config.headers.Fingerprint = fingerprint)
     if (token) config.headers.Authorization = `Bearer ${token}`
+
     return config
   },
   error => {

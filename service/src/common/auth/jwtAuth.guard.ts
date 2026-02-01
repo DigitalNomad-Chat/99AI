@@ -33,9 +33,32 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const request = context.switchToHttp().getRequest();
     // TODO 域名检测
     const _domain = request.headers.host;
+
+    // [DEBUG] 添加调试日志
+    const authHeader = request.headers.authorization;
+    console.log('[JwtAuthGuard] URL:', request.url);
+    console.log('[JwtAuthGuard] Auth header exists:', !!authHeader);
+    console.log('[JwtAuthGuard] All header keys:', Object.keys(request.headers).filter(k => k.toLowerCase().includes('auth')));
+
     const token = this.extractToken(request);
-    request.user = await this.validateToken(token);
-    await this.redisCacheService.checkTokenAuth(token, request);
+    console.log('[JwtAuthGuard] Token extracted:', token ? `${token.substring(0, 20)}...` : 'null/undefined');
+
+    try {
+      request.user = await this.validateToken(token);
+      console.log('[JwtAuthGuard] User validated:', { id: request.user?.id, role: request.user?.role });
+    } catch (error) {
+      console.log('[JwtAuthGuard] Validation error:', error.message);
+      throw error;
+    }
+
+    try {
+      await this.redisCacheService.checkTokenAuth(token, request);
+      console.log('[JwtAuthGuard] Token auth check passed');
+    } catch (error) {
+      console.log('[JwtAuthGuard] Token auth check failed:', error.message);
+      throw error;
+    }
+
     return true;
   }
 

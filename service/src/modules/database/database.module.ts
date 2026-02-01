@@ -10,6 +10,7 @@ import { UserAppsEntity } from '../app/userApps.entity';
 import { AutoReplyEntity } from '../autoReply/autoReply.entity';
 import { BadWordsEntity } from '../badWords/badWords.entity';
 import { ViolationLogEntity } from '../badWords/violationLog.entity';
+import { ApiKeyEntity } from '../apiKey/apiKey.entity';
 import { ChatGroupEntity } from '../chatGroup/chatGroup.entity';
 import { ChatLogEntity } from '../chatLog/chatLog.entity';
 import { CramiEntity } from '../crami/crami.entity';
@@ -63,6 +64,7 @@ import { VerificationEntity } from '../verification/verification.entity';
             AppCatsEntity,
             AppEntity,
             OrderEntity,
+            ApiKeyEntity,
           ],
           synchronize: false,
           logging: false,

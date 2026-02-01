@@ -852,21 +852,30 @@ export class ChatService {
     }
 
     /* 获取历史消息 */
-    const { messagesHistory } = await this.buildMessageFromParentMessageId(
-      {
-        groupId,
-        systemMessage: setSystemMessage,
-        maxModelTokens,
-        maxRounds: maxRounds,
-        isConvertToBase64: isConvertToBase64,
-        fileUrl: fileUrl,
-        imageUrl: imageUrl,
-        model: useModel,
-        isFileUpload,
-        isImageUpload,
-      },
-      this.chatLogService,
-    );
+    // 如果 body 中已经有预构建的 messagesHistory（例如 OpenAI API 兼容接口），直接使用
+    let messagesHistory;
+    if (body.messagesHistory && Array.isArray(body.messagesHistory)) {
+      Logger.log(`使用预构建的 messagesHistory: ${body.messagesHistory.length} 条消息`, 'ChatService');
+      messagesHistory = body.messagesHistory;
+    } else {
+      // 否则通过 buildMessageFromParentMessageId 从数据库获取历史消息
+      const result = await this.buildMessageFromParentMessageId(
+        {
+          groupId,
+          systemMessage: setSystemMessage,
+          maxModelTokens,
+          maxRounds: maxRounds,
+          isConvertToBase64: isConvertToBase64,
+          fileUrl: fileUrl,
+          imageUrl: imageUrl,
+          model: useModel,
+          isFileUpload,
+          isImageUpload,
+        },
+        this.chatLogService,
+      );
+      messagesHistory = result.messagesHistory;
+    }
 
     /* 单独处理 MJ 积分的扣费 */
     let charge;

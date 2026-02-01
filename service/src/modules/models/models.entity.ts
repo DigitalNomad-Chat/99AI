@@ -113,4 +113,7 @@ export class ModelsEntity extends BaseEntity {
     default: 0,
   })
   drawingType: number;
+
+  @Column({ name: 'is_api_available', comment: '是否在开放API中可用', default: 1 })
+  isApiAvailable: boolean;
 }

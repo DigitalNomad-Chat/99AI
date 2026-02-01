@@ -107,16 +107,34 @@ export class RedisCacheService {
   // }
 
   async checkTokenAuth(token, req) {
+    // [DEBUG] 添加调试日志
+    console.log('[checkTokenAuth] Starting check');
+    console.log('[checkTokenAuth] req.user:', req.user);
+    console.log('[checkTokenAuth] token exists:', !!token);
+
     const { id: userId, role } = req.user;
     const maxDevices = 2;
 
-    if (role === 'visitor') return true;
-    if (['super', 'admin'].includes(role)) return true;
+    console.log('[checkTokenAuth] userId:', userId, 'role:', role);
+
+    if (role === 'visitor') {
+      console.log('[checkTokenAuth] User is visitor, skipping check');
+      return true;
+    }
+    if (['super', 'admin'].includes(role)) {
+      console.log('[checkTokenAuth] User is super/admin, skipping check');
+      return true;
+    }
+
+    console.log('[checkTokenAuth] Checking tokens in Redis for user:', userId);
 
     let tokens = await this.redisClient.zRange(`tokens:${userId}`, 0, -1);
+    console.log('[checkTokenAuth] Stored tokens count:', tokens.length);
+    console.log('[checkTokenAuth] Current token in stored list:', tokens.includes(token));
 
     // 如果token不在列表中，说明是被挤掉的旧设备
     if (!tokens.includes(token)) {
+      console.log('[checkTokenAuth] Token NOT in list, throwing UNAUTHORIZED');
       throw new HttpException(
         '您的登录已失效（可能由于其他设备登录），请重新登录！',
         HttpStatus.UNAUTHORIZED,
@@ -135,6 +153,7 @@ export class RedisCacheService {
       }
     }
 
+    console.log('[checkTokenAuth] Check passed, returning true');
     return true;
   }
 
