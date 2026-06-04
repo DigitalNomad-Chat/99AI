@@ -16,6 +16,7 @@ export const useGlobalStore = defineStore('global-store', {
   state: (): GlobalState => ({
     loading: false,
     showAppListComponent: false,
+    showOfficeToolCenter: false,
     settingsDialog: false,
     showLoginDialog: false,
     showBadWordsDialog: false,
@@ -253,6 +254,18 @@ export const useGlobalStore = defineStore('global-store', {
 
     updateShowAppListComponent(showAppListComponent: boolean) {
       this.showAppListComponent = showAppListComponent
+      // 打开应用广场时关闭办公神器
+      if (showAppListComponent) {
+        this.showOfficeToolCenter = false
+      }
+    },
+
+    updateShowOfficeToolCenter(showOfficeToolCenter: boolean) {
+      this.showOfficeToolCenter = showOfficeToolCenter
+      // 打开办公神器时关闭应用广场
+      if (showOfficeToolCenter) {
+        this.showAppListComponent = false
+      }
     },
 
     setCurrentExternalLink(link: string | null) {

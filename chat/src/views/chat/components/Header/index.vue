@@ -7,6 +7,7 @@ import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useAppStore, useChatStore, useGlobalStoreWithOut } from '@/store'
 import {
   Brightness,
+  Briefcase,
   CheckOne,
   Close,
   DarkMode,
@@ -429,6 +430,18 @@ function openSettings(tab?: number) {
               </button>
               <!-- 悬停提示 - 关闭 -->
               <div v-if="!isMobile" class="tooltip tooltip-bottom">关闭</div>
+            </div>
+            <!-- 办公神器入口按钮 -->
+            <div v-if="!externalLinkActive && !isPreviewerVisible && !isAppListVisible" class="relative group mx-1">
+              <button
+                type="button"
+                class="btn-icon btn-md"
+                @click="useGlobalStore.updateShowOfficeToolCenter(true)"
+                aria-label="打开办公神器"
+              >
+                <Briefcase size="20" aria-hidden="true" />
+              </button>
+              <div v-if="!isMobile" class="tooltip tooltip-bottom">办公神器</div>
             </div>
             <div v-else-if="!isPreviewerVisible" class="relative group mx-1">
               <button

@@ -13,7 +13,7 @@ import {
 } from '@/store'
 import { dialog } from '@/utils/dialog'
 import { message } from '@/utils/message'
-import { ApplicationTwo, Delete, Down, Unlike, Up } from '@icon-park/vue-next'
+import { ApplicationTwo, Briefcase, Delete, Down, Unlike, Up } from '@icon-park/vue-next'
 import { computed, inject, ref, watch } from 'vue'
 import ListItem from './ListItem.vue'
 
@@ -152,6 +152,9 @@ function isActive(uuid: number) {
 
 /* 判断应用广场是否激活 */
 const isAppListActive = computed(() => useGlobalStore.showAppListComponent)
+
+/* 判断办公神器是否激活 */
+const isOfficeToolActive = computed(() => useGlobalStore.showOfficeToolCenter)
 
 async function handleCollect(appId: number) {
   try {
@@ -300,6 +303,32 @@ const isAppsHovered = ref(false)
               :class="isAppListActive ? '' : 'text-gray-600'"
             />
             {{ t('chat.appSquare') }}
+          </div>
+          <!-- 办公神器入口 -->
+          <div
+            class="relative flex items-center gap-3 px-3 py-2 break-all rounded-lg cursor-pointer hover:bg-white group dark:hover:bg-gray-800 font-medium text-sm transition-colors duration-200"
+            :class="
+              isOfficeToolActive
+                ? ['bg-[#e8f0fe]', 'text-primary-600', 'dark:bg-[#1e3a5f]', 'dark:text-white']
+                : ['text-gray-700', 'dark:bg-gray-900', 'dark:text-gray-400']
+            "
+            @click="
+              async () => {
+                useGlobalStore.updateShowOfficeToolCenter(true)
+                chatStore.active = 0
+                if (isMobile) {
+                  appStore.setSiderCollapsed(true)
+                }
+              }
+            "
+          >
+            <Briefcase
+              theme="outline"
+              size="25"
+              class="ml-1 mr-1 text-sm my-1"
+              :class="isOfficeToolActive ? '' : 'text-gray-600'"
+            />
+            办公神器
           </div>
         </div>
 

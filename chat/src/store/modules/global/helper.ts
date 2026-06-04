@@ -54,6 +54,7 @@ export interface GlobalState {
   full_json: string
   externalLinkDialog: boolean
   showAppListComponent: boolean
+  showOfficeToolCenter: boolean
   showBadWordsDialog: boolean
   showHtmlPreviewer: boolean
   showTextEditor: boolean

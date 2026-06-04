@@ -23,6 +23,7 @@ import AiBotComponent from './components/AiBot/index.vue'
 import AppList from './components/AppList/index.vue'
 import AppTips from './components/AppTips/index.vue'
 import SkillSelector from './components/SkillSelector/index.vue'
+import OfficeToolCenter from './components/OfficeToolCenter/index.vue'
 import FooterComponent from './components/Footer/index.vue'
 import HeaderComponent from './components/Header/index.vue'
 import HtmlSidebar from '@/components/HtmlSidebar.vue'
@@ -1210,6 +1211,12 @@ const toggleTextEditor = () => {
   useGlobalStore.updateTextEditor(!useGlobalStore.showTextEditor)
 }
 
+// 打开办公神器
+const openOfficeToolCenter = () => {
+  showSkillSelector.value = false
+  useGlobalStore.updateShowOfficeToolCenter(true)
+}
+
 // Handle the 'run-app' event from AppList
 async function handleRunAppFromList(app: any) {
   showAppListComponent.value = false // Hide AppList
@@ -1281,14 +1288,23 @@ function handleRunSkill({ skill, result }: { skill: any; result: string }) {
   }
 }
 
+// 处理办公工具执行结果
+function handleRunOfficeTool({ tool, result }: { tool: any; result: string }) {
+  useGlobalStore.updateShowOfficeToolCenter(false)
+  if (result) {
+    onConversation({ msg: result })
+  }
+}
+
 // ============== 依赖注入 ==============
 provide('onConversation', onConversation)
 provide('handleRegenerate', handleRegenerate)
+provide('openOfficeToolCenter', openOfficeToolCenter)
 
 // Potentially expose toggleAppList if needed by other children
 // defineExpose({ toggleAppList })
 // Expose the toggleAppList function
-defineExpose({ toggleAppList, toggleTextEditor, toggleSkillSelector })
+defineExpose({ toggleAppList, toggleTextEditor, toggleSkillSelector, openOfficeToolCenter })
 
 // 打开图片预览器
 function openImagePreviewer(imageUrls: string[], initialIndex: number, mjData?: any) {
@@ -1355,6 +1371,13 @@ provide('toggleSkillSelector', toggleSkillSelector)
           class="relative z-10 flex-1 overflow-hidden"
           @close="showSkillSelector = false"
           @run-skill="handleRunSkill"
+        />
+      </template>
+      <template v-else-if="useGlobalStore.showOfficeToolCenter">
+        <OfficeToolCenter
+          class="relative z-10 flex-1 overflow-hidden bg-white dark:bg-gray-900"
+          @close="useGlobalStore.updateShowOfficeToolCenter(false)"
+          @run-tool="handleRunOfficeTool"
         />
       </template>
       <template v-else>
