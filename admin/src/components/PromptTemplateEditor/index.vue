@@ -15,13 +15,13 @@
     isVariable?: boolean;
     variableName?: string;
     required?: boolean;
-    systemType?: 'userPrompt' | null;  // 标识系统字段
+    systemType?: 'userPrompt' | null; // 标识系统字段
   }
 
   // 定义 Props 和 Emits
   const props = defineProps<{
     modelValue: TemplateField[];
-    appType?: number;  // 0=智能体, 1=FastGPT, 2=Dify, 3=n8n
+    appType?: number; // 0=智能体, 1=FastGPT, 2=Dify, 3=n8n
   }>();
 
   const emit = defineEmits<{
@@ -99,7 +99,7 @@
           type: newType,
           options: newType === 'select' && !field.options ? [''] : field.options,
           // 文件类型默认不作为变量
-          isVariable: (newType !== 'file' && newType !== 'image') ? field.isVariable : false,
+          isVariable: newType !== 'file' && newType !== 'image' ? field.isVariable : false,
         };
       }
       return field;
@@ -220,14 +220,20 @@
 
           <div class="flex items-start space-x-3" :class="{ 'mt-2': isSystemField(field) }">
             <!-- Add Number Prefix (系统字段不显示序号) -->
-            <div v-if="!isSystemField(field)" class="field-number font-semibold text-gray-400 pt-2 mr-1">
+            <div
+              v-if="!isSystemField(field)"
+              class="field-number font-semibold text-gray-400 pt-2 mr-1"
+            >
               {{ index + 1 }}.
             </div>
 
             <!-- Drag Handle / Lock Icon -->
             <div
               class="drag-handle text-gray-400 hover:text-gray-600 pt-2"
-              :class="{ 'cursor-not-allowed': isSystemField(field), 'cursor-move': !isSystemField(field) }"
+              :class="{
+                'cursor-not-allowed': isSystemField(field),
+                'cursor-move': !isSystemField(field),
+              }"
             >
               <el-icon :size="20">
                 <Rank v-if="!isSystemField(field)" />
@@ -240,7 +246,16 @@
               <!-- System Field: 简化显示 -->
               <div v-if="isSystemField(field)" class="system-field-content">
                 <div class="flex items-center gap-2 mb-3">
-                  <el-tag size="small" :type="field.type === 'input' ? 'primary' : field.type === 'select' ? 'success' : 'warning'">
+                  <el-tag
+                    size="small"
+                    :type="
+                      field.type === 'input'
+                        ? 'primary'
+                        : field.type === 'select'
+                          ? 'success'
+                          : 'warning'
+                    "
+                  >
                     {{ getFieldTypeLabel(field.type) }}
                   </el-tag>
                   <el-tag size="small" type="danger">必填</el-tag>
@@ -264,7 +279,8 @@
                   <el-radio-group
                     :model-value="field.type"
                     @update:modelValue="
-                      (newType) => updateFieldType(field.id, newType as 'input' | 'select' | 'file' | 'image')
+                      (newType) =>
+                        updateFieldType(field.id, newType as 'input' | 'select' | 'file' | 'image')
                     "
                     size="small"
                     :disabled="isSystemField(field)"
@@ -284,10 +300,21 @@
 
                 <!-- 显示当前字段类型 -->
                 <div class="mb-2">
-                  <el-tag size="small" :type="field.type === 'input' ? 'primary' : field.type === 'select' ? 'success' : 'warning'">
+                  <el-tag
+                    size="small"
+                    :type="
+                      field.type === 'input'
+                        ? 'primary'
+                        : field.type === 'select'
+                          ? 'success'
+                          : 'warning'
+                    "
+                  >
                     {{ getFieldTypeLabel(field.type) }}
                   </el-tag>
-                  <el-tag v-if="field.required" size="small" type="danger" class="ml-1">必填</el-tag>
+                  <el-tag v-if="field.required" size="small" type="danger" class="ml-1"
+                    >必填</el-tag
+                  >
                 </div>
 
                 <el-form-item label="字段名称 * (Title / Label)">
@@ -323,7 +350,10 @@
                     <div v-if="props.appType !== 1" class="text-xs text-gray-500 mt-1">
                       仅 FastGPT 工作流模式支持变量
                     </div>
-                    <div v-if="props.appType === 1 && !isSystemField(field)" class="text-xs text-gray-500 mt-1">
+                    <div
+                      v-if="props.appType === 1 && !isSystemField(field)"
+                      class="text-xs text-gray-500 mt-1"
+                    >
                       FastGPT 工作流模式下，所有字段默认作为变量传递
                     </div>
                     <div v-if="isSystemField(field)" class="text-xs text-orange-500 mt-1">
@@ -400,7 +430,12 @@
                     <template #default>
                       <div class="text-xs">
                         <p>• 文件将上传到99AI服务器后传递给工作流</p>
-                        <p>• 支持格式: {{ field.type === 'file' ? 'PDF, DOC, TXT, MD等' : 'JPG, PNG, GIF, WEBP' }}</p>
+                        <p>
+                          • 支持格式:
+                          {{
+                            field.type === 'file' ? 'PDF, DOC, TXT, MD等' : 'JPG, PNG, GIF, WEBP'
+                          }}
+                        </p>
                       </div>
                     </template>
                   </el-alert>
@@ -414,12 +449,18 @@
 
     <!-- 添加按钮组 - 统一视觉语言 -->
     <div class="field-actions">
-      <button
-        type="button"
-        class="action-btn action-btn-input"
-        @click="addField('input')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button type="button" class="action-btn action-btn-input" @click="addField('input')">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
@@ -427,12 +468,18 @@
         <span class="btn-type-hint type-input"></span>
       </button>
 
-      <button
-        type="button"
-        class="action-btn action-btn-select"
-        @click="addField('select')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button type="button" class="action-btn action-btn-select" @click="addField('select')">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
@@ -440,12 +487,18 @@
         <span class="btn-type-hint type-select"></span>
       </button>
 
-      <button
-        type="button"
-        class="action-btn action-btn-file"
-        @click="addField('file')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button type="button" class="action-btn action-btn-file" @click="addField('file')">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
@@ -453,12 +506,18 @@
         <span class="btn-type-hint type-file"></span>
       </button>
 
-      <button
-        type="button"
-        class="action-btn action-btn-image"
-        @click="addField('image')"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button type="button" class="action-btn action-btn-image" @click="addField('image')">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
@@ -895,7 +954,9 @@
 
   @media (prefers-reduced-motion: reduce) {
     .action-btn {
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
     }
 
     .action-btn:hover {

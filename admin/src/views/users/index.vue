@@ -197,7 +197,14 @@ meta:
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
+      <el-table
+        v-loading="loading"
+        border
+        :data="tableData"
+        style="width: 100%"
+        size="default"
+        class="mt-4"
+      >
         <el-table-column prop="avatar" label="用户头像" fixed width="120">
           <template #default="scope">
             <el-avatar :src="scope.row.avatar" />
@@ -335,7 +342,10 @@ meta:
         <el-table-column fixed="right" label="操作" min-width="340" align="center">
           <template #default="scope">
             <div class="action-buttons-wrapper">
-              <el-button class="action-btn action-btn-primary" @click="handleUpdateStatus(scope.row)">
+              <el-button
+                class="action-btn action-btn-primary"
+                @click="handleUpdateStatus(scope.row)"
+              >
                 修改状态
               </el-button>
               <el-popconfirm

@@ -28,6 +28,7 @@ import { KnowledgeBaseEntity } from '../knowledge-base/entities/knowledge-base.e
 import { KbFileEntity } from '../knowledge-base/entities/kb-file.entity';
 import { KbChunkEntity } from '../knowledge-base/entities/kb-chunk.entity';
 import { AgentSessionEntity } from '../agent/entities/agent-session.entity';
+import { AgentMemoryEntity } from '../agent/entities/agent-memory.entity';
 
 loadEnv();
 
@@ -65,6 +66,7 @@ const dataSourceOptions: DataSourceOptions = {
     KbFileEntity,
     KbChunkEntity,
     AgentSessionEntity,
+    AgentMemoryEntity,
   ],
   synchronize: false, // 禁用自动同步，改为根据情况动态开启
   charset: 'utf8mb4',
@@ -323,7 +325,13 @@ export async function initDatabase() {
     //
     // =========================================================================
 
-    const NEW_TABLES = ['knowledge_bases', 'kb_files', 'kb_chunks', 'agent_sessions'];
+    const NEW_TABLES = [
+      'knowledge_bases',
+      'kb_files',
+      'kb_chunks',
+      'agent_sessions',
+      'agent_memories',
+    ];
     let useSynchronize = false;
     let missingTables: string[] = [];
     const checkConn = await mysql.createConnection({

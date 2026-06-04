@@ -8,6 +8,7 @@ import { TimeToolProvider } from './providers/time-tool.provider';
 import { KnowledgeBaseToolProvider } from './providers/knowledge-base-tool.provider';
 import { NetSearchToolProvider } from './providers/net-search-tool.provider';
 import { correctApiBaseUrl } from '@/common/utils/correctApiBaseUrl';
+import { MemoryService } from './memory/memory.service';
 
 interface AgentProgressEvent {
   content?: any;
@@ -28,6 +29,7 @@ export class AgentService {
     private readonly timeToolProvider: TimeToolProvider,
     private readonly knowledgeBaseToolProvider: KnowledgeBaseToolProvider,
     private readonly netSearchToolProvider: NetSearchToolProvider,
+    private readonly memoryService: MemoryService,
   ) {}
 
   /**
@@ -112,9 +114,35 @@ export class AgentService {
       this.logger.warn(`AgentSession 操作失败: ${sessionError.message}`);
     }
 
+    // 注入长期记忆上下文
+    if (groupId && userId) {
+      try {
+        currentMessages = await this.memoryService.buildMemoryAwareMessages(
+          currentMessages,
+          userId,
+          groupId,
+        );
+      } catch (e) {
+        this.logger.warn(`构建记忆上下文失败: ${e.message}`);
+      }
+    }
+
     try {
       while (currentIteration < maxIterations && !abortController.signal.aborted) {
         currentIteration++;
+
+        // 上下文压缩检查
+        try {
+          currentMessages = await this.memoryService.compressIfNeeded(
+            currentMessages,
+            max_tokens - 1000,
+            apiKey,
+            model,
+            proxyUrl,
+          );
+        } catch (e) {
+          this.logger.warn(`上下文压缩失败: ${e.message}`);
+        }
         this.logger.debug(`Agent 循环迭代 ${currentIteration}/${maxIterations}`);
 
         // 更新 session 迭代次数
@@ -200,6 +228,26 @@ export class AgentService {
 
         this.logger.debug('Agent 循环完成，无更多工具调用');
         break;
+      }
+
+      // 提取并存储记忆
+      if (groupId && userId) {
+        try {
+          const fullConversation = currentMessages
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content)))
+            .join('\n');
+          await this.memoryService.extractAndStoreMemories(
+            userId,
+            groupId,
+            fullConversation,
+            apiKey,
+            model,
+            proxyUrl,
+          );
+        } catch (e) {
+          this.logger.warn(`记忆提取存储失败: ${e.message}`);
+        }
       }
 
       // 标记 session 为已完成

@@ -24,6 +24,7 @@ export function fetchChatAPIProcess<T = any>(params: {
     groupId: number
     usingNetwork: boolean
     usingMcpTool: boolean
+    knowledgeBaseId?: number
   }
   signal?: GenericAbortSignal
   onDownloadProgress?: (progressEvent: AxiosProgressEvent) => void

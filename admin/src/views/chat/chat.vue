@@ -271,7 +271,9 @@ meta:
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right">
           <template #default="scope">
-            <el-button class="action-btn action-btn-primary" @click="showDetails(scope.row)">详情</el-button>
+            <el-button class="action-btn action-btn-primary" @click="showDetails(scope.row)"
+              >详情</el-button
+            >
           </template>
         </el-table-column>
       </el-table>

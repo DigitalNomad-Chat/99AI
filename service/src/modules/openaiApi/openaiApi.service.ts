@@ -22,7 +22,9 @@ export class OpenaiApiService {
   async toInternalFormat(dto: ChatCompletionDto, req: any): Promise<any> {
     const { model, messages, max_tokens, temperature, stream } = dto;
 
-    this.logger.log(`[OpenAI API Service] toInternalFormat: model=${model}, messages=${messages?.length}`);
+    this.logger.log(
+      `[OpenAI API Service] toInternalFormat: model=${model}, messages=${messages?.length}`,
+    );
 
     // 验证模型是否可用
     const modelEntity = await this.modelsService.getModelByName(model);
@@ -43,7 +45,9 @@ export class OpenaiApiService {
     // 构建 messagesHistory - 直接从 OpenAI 格式转换
     const messagesHistory = this.convertMessagesToInternalFormat(messages, systemMsg);
 
-    this.logger.log(`[OpenAI API Service] 转换后的 messagesHistory: ${messagesHistory.length} 条消息`);
+    this.logger.log(
+      `[OpenAI API Service] 转换后的 messagesHistory: ${messagesHistory.length} 条消息`,
+    );
 
     // 构建内部格式请求
     const result = {
@@ -54,7 +58,7 @@ export class OpenaiApiService {
         parentMessageId: 0,
       },
       systemMessage: systemMsg,
-      messagesHistory: messagesHistory,  // 添加预构建的消息历史
+      messagesHistory: messagesHistory, // 添加预构建的消息历史
     };
 
     this.logger.log(`[OpenAI API Service] 转换结果: ${JSON.stringify(result)}`);

@@ -353,7 +353,14 @@ meta:
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
+      <el-table
+        v-loading="loading"
+        border
+        :data="tableData"
+        style="width: 100%"
+        size="default"
+        class="mt-4"
+      >
         <el-table-column fixed prop="name" label="套餐名称" width="150" />
         <el-table-column prop="order" label="排序ID" align="center" width="100" />
         <el-table-column prop="appCats" label="套餐应用" width="200" align="center">
@@ -398,7 +405,10 @@ meta:
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="200">
           <template #default="scope">
-            <el-button class="action-btn action-btn-primary" @click="handleUpdatePackage(scope.row)">
+            <el-button
+              class="action-btn action-btn-primary"
+              @click="handleUpdatePackage(scope.row)"
+            >
               修改套餐
             </el-button>
             <el-popconfirm

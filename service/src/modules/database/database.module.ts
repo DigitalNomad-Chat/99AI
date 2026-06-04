@@ -27,6 +27,11 @@ import { BalanceEntity } from '../userBalance/balance.entity';
 import { FingerprintLogEntity } from '../userBalance/fingerprint.entity';
 import { UserBalanceEntity } from '../userBalance/userBalance.entity';
 import { VerificationEntity } from '../verification/verification.entity';
+import { KnowledgeBaseEntity } from '../knowledge-base/entities/knowledge-base.entity';
+import { KbFileEntity } from '../knowledge-base/entities/kb-file.entity';
+import { KbChunkEntity } from '../knowledge-base/entities/kb-chunk.entity';
+import { AgentSessionEntity } from '../agent/entities/agent-session.entity';
+import { AgentMemoryEntity } from '../agent/entities/agent-memory.entity';
 
 @Module({
   imports: [
@@ -65,6 +70,11 @@ import { VerificationEntity } from '../verification/verification.entity';
             AppEntity,
             OrderEntity,
             ApiKeyEntity,
+            KnowledgeBaseEntity,
+            KbFileEntity,
+            KbChunkEntity,
+            AgentSessionEntity,
+            AgentMemoryEntity,
           ],
           synchronize: false,
           logging: false,

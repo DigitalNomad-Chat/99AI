@@ -306,11 +306,16 @@ onMounted(() => {
           </p>
           <ul class="text-xs text-blue-700 dark:text-blue-300 mt-2 space-y-1 list-disc list-inside">
             <li>API Key 用于调用 OpenAI 兼容接口</li>
-            <li>请求地址：<code class="bg-gray-200 dark:bg-gray-800 px-1 rounded"
-              >{{ apiUrl }}/api/v1/chat/completions</code>
-          </li>
-            <li>认证方式：<code class="bg-gray-200 dark:bg-gray-800 px-1 rounded">Authorization: Bearer sk-xxxxx</code>
-          </li>
+            <li>
+              请求地址：<code class="bg-gray-200 dark:bg-gray-800 px-1 rounded"
+                >{{ apiUrl }}/api/v1/chat/completions</code
+              >
+            </li>
+            <li>
+              认证方式：<code class="bg-gray-200 dark:bg-gray-800 px-1 rounded"
+                >Authorization: Bearer sk-xxxxx</code
+              >
+            </li>
             <li>最多可创建 5 个 API Key,完整Key仅在创建时显示,请妥善保管.如key丢失请新建.</li>
           </ul>
         </div>
@@ -364,9 +369,11 @@ onMounted(() => {
                   <button
                     @click="toggleApiKeyStatus(item.id, item.isActive)"
                     class="ml-2 px-2 py-0.5 text-xs rounded border transition-colors"
-                    :class="item.isActive
-                      ? 'border-orange-300 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20'
-                      : 'border-green-300 text-green-600 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-900/20'"
+                    :class="
+                      item.isActive
+                        ? 'border-orange-300 text-orange-600 hover:bg-orange-50 dark:border-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20'
+                        : 'border-green-300 text-green-600 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-900/20'
+                    "
                     :title="item.isActive ? '点击停用' : '点击启用'"
                   >
                     {{ item.isActive ? '停用' : '启用' }}
@@ -374,14 +381,17 @@ onMounted(() => {
                 </div>
                 <div class="space-y-1 text-sm">
                   <div class="flex items-center">
-                    <code class="flex-1 text-xs bg-white dark:bg-gray-900 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 font-mono break-all">
+                    <code
+                      class="flex-1 text-xs bg-white dark:bg-gray-900 px-2 py-1 rounded border border-gray-200 dark:border-gray-600 font-mono break-all"
+                    >
                       {{ item.apiKey }}
                     </code>
                   </div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">
-                    创建时间：{{ formatDate(item.createdAt) }} |
-                    使用次数：{{ item.totalRequests }} |
-                    最后使用：{{ formatDate(item.lastUsedAt) }}
+                    创建时间：{{ formatDate(item.createdAt) }} | 使用次数：{{
+                      item.totalRequests
+                    }}
+                    | 最后使用：{{ formatDate(item.lastUsedAt) }}
                   </div>
                 </div>
               </div>
@@ -397,7 +407,10 @@ onMounted(() => {
         </div>
 
         <!-- 分页信息 -->
-        <div v-if="total > pageSize" class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
+        <div
+          v-if="total > pageSize"
+          class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400"
+        >
           共 {{ total }} 个 API Key，当前第 {{ currentPage }} 页
         </div>
 
@@ -452,7 +465,10 @@ onMounted(() => {
     </div>
 
     <!-- 创建 API Key 对话框 -->
-    <div v-if="showCreateDialog" class="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900 bg-opacity-50">
+    <div
+      v-if="showCreateDialog"
+      class="fixed inset-0 z-[10000] flex items-center justify-center bg-gray-900 bg-opacity-50"
+    >
       <div class="bg-white dark:bg-gray-750 rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           创建新的 API Key
@@ -461,11 +477,11 @@ onMounted(() => {
         <!-- 创建成功显示 -->
         <div v-if="createdKey">
           <div class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <p class="text-sm text-green-800 dark:text-green-200 mb-2">
-              ✓ API Key 创建成功！
-            </p>
+            <p class="text-sm text-green-800 dark:text-green-200 mb-2">✓ API Key 创建成功！</p>
             <div class="flex items-center">
-              <code class="flex-1 text-xs bg-white dark:bg-gray-900 px-3 py-2 rounded border border-green-200 dark:border-green-800 font-mono break-all text-green-700 dark:text-green-300">
+              <code
+                class="flex-1 text-xs bg-white dark:bg-gray-900 px-3 py-2 rounded border border-green-200 dark:border-green-800 font-mono break-all text-green-700 dark:text-green-300"
+              >
                 {{ createdKey }}
               </code>
               <button
@@ -504,10 +520,7 @@ onMounted(() => {
           </div>
 
           <div class="flex space-x-3">
-            <button
-              @click="showCreateDialog = false"
-              class="btn btn-secondary btn-md flex-1"
-            >
+            <button @click="showCreateDialog = false" class="btn btn-secondary btn-md flex-1">
               取消
             </button>
             <button

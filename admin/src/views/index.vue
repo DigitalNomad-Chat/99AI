@@ -397,57 +397,57 @@ meta:
         </div>
       </div>
 
-        <!-- 图表区域 -->
+      <!-- 图表区域 -->
+      <div
+        class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col overflow-hidden"
+      >
         <div
-          class="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col overflow-hidden"
+          class="flex justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
         >
-          <div
-            class="flex justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700"
+          <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+            <el-tab-pane label="对话统计" name="chat">
+              <template #label>
+                <div class="flex items-center justify-center gap-2 px-2">
+                  <el-icon><ChatDotRound /></el-icon>
+                  <span>对话统计</span>
+                </div>
+              </template>
+            </el-tab-pane>
+            <el-tab-pane label="访客统计" name="visitor">
+              <template #label>
+                <div class="flex items-center justify-center gap-2 px-2">
+                  <el-icon><TrendCharts /></el-icon>
+                  <span>访客统计</span>
+                </div>
+              </template>
+            </el-tab-pane>
+          </el-tabs>
+
+          <el-radio-group
+            v-if="activeTab === 'chat'"
+            v-model="chatDays"
+            @change="getChatStatisticInfo"
+            size="small"
           >
-            <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-              <el-tab-pane label="对话统计" name="chat">
-                <template #label>
-                  <div class="flex items-center justify-center gap-2 px-2">
-                    <el-icon><ChatDotRound /></el-icon>
-                    <span>对话统计</span>
-                  </div>
-                </template>
-              </el-tab-pane>
-              <el-tab-pane label="访客统计" name="visitor">
-                <template #label>
-                  <div class="flex items-center justify-center gap-2 px-2">
-                    <el-icon><TrendCharts /></el-icon>
-                    <span>访客统计</span>
-                  </div>
-                </template>
-              </el-tab-pane>
-            </el-tabs>
+            <el-radio-button v-for="item in daysList" :key="item.value" :label="item.label">
+              {{ item.value }}
+            </el-radio-button>
+          </el-radio-group>
 
-            <el-radio-group
-              v-if="activeTab === 'chat'"
-              v-model="chatDays"
-              @change="getChatStatisticInfo"
-              size="small"
-            >
-              <el-radio-button v-for="item in daysList" :key="item.value" :label="item.label">
-                {{ item.value }}
-              </el-radio-button>
-            </el-radio-group>
+          <el-radio-group v-else v-model="baiduDays" @change="getBaiduVisitInfo" size="small">
+            <el-radio-button v-for="item in daysList" :key="item.value" :label="item.label">
+              {{ item.value }}
+            </el-radio-button>
+          </el-radio-group>
+        </div>
 
-            <el-radio-group v-else v-model="baiduDays" @change="getBaiduVisitInfo" size="small">
-              <el-radio-button v-for="item in daysList" :key="item.value" :label="item.label">
-                {{ item.value }}
-              </el-radio-button>
-            </el-radio-group>
-          </div>
-
-          <div class="flex-1 p-5 relative">
-            <div id="chat" class="w-full h-full" v-show="activeTab === 'chat'" />
-            <div id="baidu" class="w-full h-full" v-show="activeTab === 'visitor'" />
-          </div>
+        <div class="flex-1 p-5 relative">
+          <div id="chat" class="w-full h-full" v-show="activeTab === 'chat'" />
+          <div id="baidu" class="w-full h-full" v-show="activeTab === 'visitor'" />
         </div>
       </div>
     </div>
+  </div>
 </template>
 
 <style scoped>

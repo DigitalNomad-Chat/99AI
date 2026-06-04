@@ -13,9 +13,7 @@ export function fetchQueryApiKeysAPI<T>(data: {
 }
 
 /* 创建新的 API Key */
-export function fetchCreateApiKeyAPI<T>(data: {
-  name?: string
-}): Promise<Response<T>> {
+export function fetchCreateApiKeyAPI<T>(data: { name?: string }): Promise<Response<T>> {
   return post<T>({
     url: '/user/api-keys',
     data,
@@ -23,9 +21,7 @@ export function fetchCreateApiKeyAPI<T>(data: {
 }
 
 /* 删除 API Key */
-export function fetchDeleteApiKeyAPI<T>(data: {
-  id: number
-}): Promise<Response<T>> {
+export function fetchDeleteApiKeyAPI<T>(data: { id: number }): Promise<Response<T>> {
   return post<T>({
     url: `/user/api-keys/${data.id}`,
     data: {},
@@ -33,9 +29,7 @@ export function fetchDeleteApiKeyAPI<T>(data: {
 }
 
 /* 切换 API Key 启用/禁用状态 */
-export function fetchToggleApiKeyAPI<T>(data: {
-  id: number
-}): Promise<Response<T>> {
+export function fetchToggleApiKeyAPI<T>(data: { id: number }): Promise<Response<T>> {
   return post<T>({
     url: `/user/api-keys/${data.id}/toggle`,
     data: {},

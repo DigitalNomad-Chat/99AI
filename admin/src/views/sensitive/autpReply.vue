@@ -157,7 +157,14 @@ meta:
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
+      <el-table
+        v-loading="loading"
+        border
+        :data="tableData"
+        style="width: 100%"
+        size="default"
+        class="mt-4"
+      >
         <el-table-column prop="prompt" label="关键词" />
         <el-table-column prop="answer" label="知识库" />
         <el-table-column prop="status" label="状态" width="120">

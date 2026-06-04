@@ -31,7 +31,7 @@ export default function createVitePlugins(viteEnv, isBuild = false) {
       ],
     }),
   ]
-  vitePlugins.push(createDevtools(viteEnv))
+  // vitePlugins.push(createDevtools(viteEnv))  // 临时禁用：devtools-kit 在 Node 端访问 localStorage 导致启动失败
   vitePlugins.push(createAutoImport())
   vitePlugins.push(createComponents())
   vitePlugins.push(createUnocss())

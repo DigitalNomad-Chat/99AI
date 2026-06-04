@@ -144,7 +144,14 @@ meta:
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
+      <el-table
+        v-loading="loading"
+        border
+        :data="tableData"
+        style="width: 100%"
+        size="default"
+        class="mt-4"
+      >
         <el-table-column prop="avatar" label="用户头像" width="120" fixed>
           <template #default="scope">
             <el-avatar :src="scope.row.avatar" />

@@ -223,8 +223,8 @@ function handleWorkflowSubmit(data: Record<string, string | File>) {
   console.log('[工作流调试-AppList] 最终使用的formData:', actualFormData)
 
   const configData = {
-    schema: workflowFormSchema.value,  // 添加 schema 信息
-    data: actualFormData                 // 用户填写的数据
+    schema: workflowFormSchema.value, // 添加 schema 信息
+    data: actualFormData, // 用户填写的数据
   }
   console.log('[工作流调试-AppList] 发送的完整config:', JSON.stringify(configData, null, 2))
 
@@ -234,7 +234,7 @@ function handleWorkflowSubmit(data: Record<string, string | File>) {
   // 发送运行事件，附带配置数据（包含 schema）
   emit('run-app-with-data', {
     app: currentWorkflowApp.value,
-    config: configData
+    config: configData,
   })
 
   // 重置状态

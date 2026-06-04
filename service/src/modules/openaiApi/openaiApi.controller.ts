@@ -1,7 +1,17 @@
 import { OpenaiApiService } from './openaiApi.service';
 import { ChatCompletionDto } from './dto/chatCompletion.dto';
 import { ChatService } from '../chat/chat.service';
-import { Controller, Post, Get, Body, Req, Res, UseGuards, UseInterceptors, Logger } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Req,
+  Res,
+  UseGuards,
+  UseInterceptors,
+  Logger,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { Observable } from 'rxjs';
@@ -23,7 +33,9 @@ export class OpenaiApiController {
   @UseGuards(OpenAIAuthGuard)
   @UseInterceptors(RateLimitInterceptor)
   async chatCompletions(@Body() dto: ChatCompletionDto, @Req() req: Request, @Res() res: Response) {
-    this.logger.log(`[OpenAI API] 收到请求: model=${dto.model}, messages=${dto.messages?.length}, stream=${dto.stream}`);
+    this.logger.log(
+      `[OpenAI API] 收到请求: model=${dto.model}, messages=${dto.messages?.length}, stream=${dto.stream}`,
+    );
 
     // OpenAI 格式转换 → 内部格式
     const internalRequest = await this.openaiApiService.toInternalFormat(dto, req);
@@ -114,7 +126,9 @@ export class OpenaiApiController {
       // 调用 chatProcess
       await this.chatService.chatProcess(internalRequest, req, mockRes);
 
-      this.logger.log(`[OpenAI API] 非流式响应收集完成: content=${fullContent.length} chars, chatId=${chatId}`);
+      this.logger.log(
+        `[OpenAI API] 非流式响应收集完成: content=${fullContent.length} chars, chatId=${chatId}`,
+      );
 
       // 转换为 OpenAI 格式
       const openaiResponse = {

@@ -46,7 +46,10 @@ export class ApiKeyController {
 
     try {
       const result = await this.apiKeyService.getUserApiKeys(userId, page, pageSize);
-      console.log('[ApiKeyController] getUserApiKeys result:', { total: result.total, dataCount: result.data?.length });
+      console.log('[ApiKeyController] getUserApiKeys result:', {
+        total: result.total,
+        dataCount: result.data?.length,
+      });
       return result;
     } catch (error) {
       console.log('[ApiKeyController] getUserApiKeys error:', error.message);

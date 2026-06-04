@@ -38,14 +38,23 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const authHeader = request.headers.authorization;
     console.log('[JwtAuthGuard] URL:', request.url);
     console.log('[JwtAuthGuard] Auth header exists:', !!authHeader);
-    console.log('[JwtAuthGuard] All header keys:', Object.keys(request.headers).filter(k => k.toLowerCase().includes('auth')));
+    console.log(
+      '[JwtAuthGuard] All header keys:',
+      Object.keys(request.headers).filter(k => k.toLowerCase().includes('auth')),
+    );
 
     const token = this.extractToken(request);
-    console.log('[JwtAuthGuard] Token extracted:', token ? `${token.substring(0, 20)}...` : 'null/undefined');
+    console.log(
+      '[JwtAuthGuard] Token extracted:',
+      token ? `${token.substring(0, 20)}...` : 'null/undefined',
+    );
 
     try {
       request.user = await this.validateToken(token);
-      console.log('[JwtAuthGuard] User validated:', { id: request.user?.id, role: request.user?.role });
+      console.log('[JwtAuthGuard] User validated:', {
+        id: request.user?.id,
+        role: request.user?.role,
+      });
     } catch (error) {
       console.log('[JwtAuthGuard] Validation error:', error.message);
       throw error;

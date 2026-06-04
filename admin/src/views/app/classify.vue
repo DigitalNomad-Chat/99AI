@@ -208,7 +208,14 @@ meta:
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
+      <el-table
+        v-loading="loading"
+        border
+        :data="tableData"
+        style="width: 100%"
+        size="default"
+        class="mt-4"
+      >
         <!-- <el-table-column prop="coverImg" label="分类封面" width="120">
           <template #default="scope">
             <el-image
@@ -254,7 +261,10 @@ meta:
         </el-table-column>
         <el-table-column label="操作" width="200">
           <template #default="scope">
-            <el-button class="action-btn action-btn-primary" @click="handleUpdatePackage(scope.row)">
+            <el-button
+              class="action-btn action-btn-primary"
+              @click="handleUpdatePackage(scope.row)"
+            >
               编辑
             </el-button>
             <el-popconfirm
