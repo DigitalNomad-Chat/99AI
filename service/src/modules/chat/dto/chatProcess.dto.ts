@@ -9,6 +9,7 @@ export class Options {
   temperature?: number;
   top_p?: number;
   groupId?: number;
+  knowledgeBaseId?: number;
 }
 
 export class ChatProcessDto {

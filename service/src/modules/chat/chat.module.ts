@@ -34,6 +34,9 @@ import { UserBalanceService } from '../userBalance/userBalance.service';
 import { VerificationEntity } from '../verification/verification.entity';
 import { VerificationService } from '../verification/verification.service';
 import { WorkflowModule } from '../workflow/workflow.module';
+import { KnowledgeBaseModule } from '../knowledge-base/knowledge-base.module';
+import { AgentModule } from '../agent/agent.module';
+import { AgentService } from '../agent/agent.service';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 
@@ -41,6 +44,8 @@ import { ChatService } from './chat.service';
 @Module({
   imports: [
     WorkflowModule,
+    KnowledgeBaseModule,
+    AgentModule,
     TypeOrmModule.forFeature([
       BalanceEntity,
       UserEntity,

@@ -25,6 +25,8 @@ import { UploadService } from '../upload/upload.service';
 import { UserService } from '../user/user.service';
 import { UserBalanceService } from '../userBalance/userBalance.service';
 import { WorkflowService } from '../workflow/workflow.service';
+import { KbSearchService } from '../knowledge-base/kb-search.service';
+import { AgentService } from '../agent/agent.service';
 
 @Injectable()
 export class ChatService {
@@ -45,6 +47,8 @@ export class ChatService {
     private readonly modelsService: ModelsService,
     private readonly appService: AppService,
     private readonly workflowService: WorkflowService,
+    private readonly kbSearchService: KbSearchService,
+    private readonly agentService: AgentService,
   ) {}
 
   async chatProcess(body: any, req?: Request, res?: Response) {
@@ -851,11 +855,33 @@ export class ChatService {
       }
     }
 
+    /* RAG 知识库检索 */
+    if (options.knowledgeBaseId) {
+      try {
+        const searchResults = await this.kbSearchService.hybridSearch(
+          Number(options.knowledgeBaseId),
+          {
+            query: prompt,
+            topK: 5,
+          },
+        );
+        if (searchResults && searchResults.length > 0) {
+          const context = searchResults.map(r => r.content).join('\n\n---\n\n');
+          setSystemMessage += `\n\n[知识库检索结果]\n${context}\n\n请基于以上知识库内容回答用户问题。如果知识库中没有相关信息，请明确告知用户。`;
+        }
+      } catch (error) {
+        Logger.warn(`知识库检索失败: ${error.message}`, 'ChatService');
+      }
+    }
+
     /* 获取历史消息 */
     // 如果 body 中已经有预构建的 messagesHistory（例如 OpenAI API 兼容接口），直接使用
     let messagesHistory;
     if (body.messagesHistory && Array.isArray(body.messagesHistory)) {
-      Logger.log(`使用预构建的 messagesHistory: ${body.messagesHistory.length} 条消息`, 'ChatService');
+      Logger.log(
+        `使用预构建的 messagesHistory: ${body.messagesHistory.length} 条消息`,
+        'ChatService',
+      );
       messagesHistory = body.messagesHistory;
     } else {
       // 否则通过 buildMessageFromParentMessageId 从数据库获取历史消息
@@ -907,52 +933,71 @@ export class ChatService {
 
           res.write(`\n${JSON.stringify(chatId)}`);
 
-          /* 普通对话 */
-          response = await this.openAIChatService.chat(messagesHistory, {
-            chatId: assistantLogId,
-            extraParam,
-            deepThinkingType,
-            max_tokens: max_tokens,
-            apiKey: modelKey,
-            model: useModel,
-            modelName: useModeName,
-            temperature,
-            isImageUpload,
-            prompt,
-            imageUrl,
-            isFileUpload,
-            fileUrl,
-            usingNetwork,
-            timeout: modelTimeout,
-            proxyUrl: proxyResUrl,
-            modelAvatar: modelAvatar,
-            usingDeepThinking: usingDeepThinking,
-            usingMcpTool: usingMcpTool,
-            isMcpTool: isMcpTool,
-            onProgress: chat => {
-              res.write(`\n${JSON.stringify(chat)}`);
-            },
-            onFailure: async data => {
-              await this.chatLogService.updateChatLog(assistantLogId, {
-                content: data.errMsg,
-                status: 4,
-              });
-            },
-            onDatabase: async data => {
-              // 保存数据到数据库
-              if (data.networkSearchResult) {
+          /* Agent 模式 */
+          if (isMcpTool && usingMcpTool) {
+            Logger.log('使用 Agent 模式处理对话', 'ChatService');
+            response = await this.agentService.chatProcess(body, req, res, {
+              messagesHistory,
+              apiKey: modelKey,
+              model: useModel,
+              proxyUrl: proxyResUrl,
+              temperature,
+              max_tokens,
+              timeout: modelTimeout,
+              assistantLogId,
+              onProgress: chat => {
+                res.write(`\n${JSON.stringify(chat)}`);
+              },
+              abortController,
+            });
+          } else {
+            /* 普通对话 */
+            response = await this.openAIChatService.chat(messagesHistory, {
+              chatId: assistantLogId,
+              extraParam,
+              deepThinkingType,
+              max_tokens: max_tokens,
+              apiKey: modelKey,
+              model: useModel,
+              modelName: useModeName,
+              temperature,
+              isImageUpload,
+              prompt,
+              imageUrl,
+              isFileUpload,
+              fileUrl,
+              usingNetwork,
+              timeout: modelTimeout,
+              proxyUrl: proxyResUrl,
+              modelAvatar: modelAvatar,
+              usingDeepThinking: usingDeepThinking,
+              usingMcpTool: usingMcpTool,
+              isMcpTool: isMcpTool,
+              onProgress: chat => {
+                res.write(`\n${JSON.stringify(chat)}`);
+              },
+              onFailure: async data => {
                 await this.chatLogService.updateChatLog(assistantLogId, {
-                  networkSearchResult: data.networkSearchResult,
+                  content: data.errMsg,
+                  status: 4,
                 });
-              }
-              if (data.fileVectorResult) {
-                await this.chatLogService.updateChatLog(assistantLogId, {
-                  fileVectorResult: data.fileVectorResult,
-                });
-              }
-            },
-            abortController,
-          });
+              },
+              onDatabase: async data => {
+                // 保存数据到数据库
+                if (data.networkSearchResult) {
+                  await this.chatLogService.updateChatLog(assistantLogId, {
+                    networkSearchResult: data.networkSearchResult,
+                  });
+                }
+                if (data.fileVectorResult) {
+                  await this.chatLogService.updateChatLog(assistantLogId, {
+                    fileVectorResult: data.fileVectorResult,
+                  });
+                }
+              },
+              abortController,
+            });
+          } // 关闭 else 块
 
           Logger.debug(`JSON: ${JSON.stringify(response)}`, 'ChatService');
 

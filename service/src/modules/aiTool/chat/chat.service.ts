@@ -405,6 +405,7 @@ export class OpenAIChatService {
       extraParam?: any;
       searchResults?: any[];
       images?: string[];
+      tools?: any[];
       abortController: AbortController;
       onProgress?: (data: any) => void;
     },
@@ -419,6 +420,7 @@ export class OpenAIChatService {
       max_tokens,
       searchResults,
       images,
+      tools,
       abortController,
       onProgress,
     } = inputs;
@@ -443,6 +445,7 @@ export class OpenAIChatService {
         timeout,
         temperature,
         max_tokens,
+        tools,
         abortController,
         onProgress,
       },
@@ -785,6 +788,7 @@ export class OpenAIChatService {
       timeout: any;
       temperature: any;
       max_tokens?: any;
+      tools?: any[];
       abortController: AbortController;
       onProgress?: (data: any) => void;
     },
@@ -797,17 +801,23 @@ export class OpenAIChatService {
       timeout,
       temperature,
       max_tokens,
+      tools,
       abortController,
       onProgress,
     } = inputs;
 
     // 准备请求数据
-    const streamData = {
+    const streamData: any = {
       model,
       messages: messagesHistory,
       stream: true,
       temperature,
     };
+
+    if (tools && tools.length > 0) {
+      streamData.tools = tools;
+      streamData.tool_choice = 'auto';
+    }
 
     // 创建OpenAI实例
     const openai = new OpenAI({

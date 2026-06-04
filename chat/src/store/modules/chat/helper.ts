@@ -17,6 +17,7 @@ export function defaultState(): Chat.ChatState {
     pluginList: [],
     prompt: '',
     reasoningText: '',
+    knowledgeBaseId: undefined,
   }
 }
 

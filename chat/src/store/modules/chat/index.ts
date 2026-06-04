@@ -369,6 +369,11 @@ export const useChatStore = defineStore('chat-store', {
       this.recordState()
     },
 
+    setKnowledgeBaseId(id: number | undefined) {
+      this.knowledgeBaseId = id
+      this.recordState()
+    },
+
     setStreamIn(isStreamIn: boolean) {
       this.isStreamIn = isStreamIn
       this.recordState()

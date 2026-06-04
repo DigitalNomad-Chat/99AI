@@ -547,17 +547,21 @@ export class ModelsService {
     });
 
     console.log('[ModelsService] Found models from DB:', models.length);
-    console.log('[ModelsService] Models data:', JSON.stringify(models.map(m => ({
-      model: m.model,
-      modelName: m.modelName,
-      isApiAvailable: m.isApiAvailable,
-      type: typeof m.isApiAvailable,
-    }))));
+    console.log(
+      '[ModelsService] Models data:',
+      JSON.stringify(
+        models.map(m => ({
+          model: m.model,
+          modelName: m.modelName,
+          isApiAvailable: m.isApiAvailable,
+          type: typeof m.isApiAvailable,
+        })),
+      ),
+    );
 
     // 过滤出可用于开放API的模型，返回前端需要的格式
     // 注意：isApiAvailable在数据库中为tinyint(1)，TypeORM返回数字1而非布尔true
-    const filtered = models
-      .filter(m => m.isApiAvailable === true || m.isApiAvailable === 1);
+    const filtered = models.filter(m => m.isApiAvailable === true);
 
     console.log('[ModelsService] Filtered models:', filtered.length);
 

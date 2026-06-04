@@ -5,6 +5,7 @@ import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { useAuthStore, useChatStore, useGlobalStoreWithOut } from '@/store'
 import {
   AddPicture,
+  Book,
   FullScreen,
   LoadingFour,
   OffScreen,
@@ -19,6 +20,7 @@ import PinyinMatch from 'pinyin-match'
 
 // import { getDocument } from 'pdfjs-dist';
 import { uploadFile } from '@/api/upload'
+import { fetchKnowledgeBaseListAPI } from '@/api/knowledgeBase'
 import { message } from '@/utils/message'
 import { computed, inject, nextTick, onMounted, onUnmounted, Ref, ref, watch } from 'vue'
 import FilePreview from './components/FilePreview.vue'
@@ -69,6 +71,30 @@ const fileUploadConfig = ref({
   multiple: true,
 })
 
+// 知识库相关状态
+const kbList = ref<{ id: number; name: string }[]>([])
+const showKbSelector = ref(false)
+
+interface KbItem {
+  id: number
+  name: string
+  description?: string
+}
+
+const selectedKb = computed(() => {
+  return kbList.value.find(kb => kb.id === chatStore.knowledgeBaseId)
+})
+
+const usingKnowledgeBase = computed({
+  get: () => !!chatStore.knowledgeBaseId,
+  set: (val: boolean) => {
+    if (!val) {
+      chatStore.setKnowledgeBaseId(undefined)
+      showKbSelector.value = false
+    }
+  },
+})
+
 interface App {
   id: number
   name: string
@@ -103,6 +129,13 @@ const usingDeepThinking = computed({
   get: () => chatStore.usingDeepThinking,
   set: value => {
     chatStore.setUsingDeepThinking(value)
+  },
+})
+
+const usingMcpTool = computed({
+  get: () => chatStore.usingMcpTool,
+  set: value => {
+    chatStore.setUsingMcpTool(value)
   },
 })
 const { isMobile } = useBasicLayout()
@@ -146,6 +179,8 @@ const isImageModel = computed(() => {
 const isNetworkSearch = computed(() => configObj?.value?.modelInfo?.isNetworkSearch || false)
 
 const isDeepThinking = computed(() => configObj?.value?.modelInfo?.deepThinkingType === 1 || false)
+
+const isMcpTool = computed(() => configObj?.value?.modelInfo?.isMcpTool || false)
 
 const clipboardText = computed(() => useGlobalStore.clipboardText)
 
@@ -284,6 +319,31 @@ async function queryApps() {
   // activeList.value = appList.value;
 }
 
+async function queryKnowledgeBases() {
+  try {
+    const res: any = await fetchKnowledgeBaseListAPI()
+    if (res.success && res.code === 200) {
+      kbList.value =
+        res.data?.rows?.map((item: KbItem) => ({
+          id: item.id,
+          name: item.name,
+        })) || []
+    }
+  } catch (error) {
+    console.error('获取知识库列表失败:', error)
+  }
+}
+
+const selectKnowledgeBase = (kb: KbItem) => {
+  chatStore.setKnowledgeBaseId(kb.id)
+  showKbSelector.value = false
+}
+
+const clearKnowledgeBase = () => {
+  chatStore.setKnowledgeBaseId(undefined)
+  showKbSelector.value = false
+}
+
 const activeModelAvatar = computed(() => {
   return String(usingPlugin?.value?.pluginImg || configObj?.value.modelInfo?.modelAvatar || '')
 })
@@ -398,6 +458,7 @@ const handleSubmit = async (index?: number) => {
     fileUrl: submittedFileUrl,
     imageUrl: imageUrl,
     pluginParam: usingPlugin.value?.parameters,
+    knowledgeBaseId: chatStore.knowledgeBaseId,
   })
 
   // 清空所有上传的图片，确保imageUrl和fileUrl使用后立即销毁
@@ -1108,6 +1169,11 @@ const shouldShowDeepThinking = computed(() => {
   return isDeepThinking.value
 })
 
+const shouldShowMcpTool = computed(() => {
+  // 只检查是否支持MCP工具
+  return isMcpTool.value
+})
+
 // 添加流程图按钮显示控制
 const shouldShowMermaidTool = computed(() => {
   // 当没有使用其他插件时显示流程图按钮
@@ -1220,6 +1286,7 @@ onMounted(async () => {
     }
   })
   await queryApps()
+  await queryKnowledgeBases()
 
   // 添加全局拖拽事件监听
   document.addEventListener('dragover', handleDocumentDragOver)
@@ -1609,6 +1676,24 @@ const shouldShowButtonText = computed(() => {
                 <div v-if="!isMobile" class="tooltip tooltip-top">启用网络搜索，获取最新信息</div>
               </div>
 
+              <div v-if="shouldShowMcpTool" class="group relative">
+                <div
+                  class="btn-pill btn-md mx-1"
+                  :class="[usingMcpTool ? 'btn-pill-active' : '']"
+                  @click="usingMcpTool = !usingMcpTool"
+                  role="button"
+                  :aria-pressed="usingMcpTool"
+                  aria-label="启用或禁用Agent工具调用"
+                  tabindex="0"
+                >
+                  <Square size="15" />
+                  <span v-if="shouldShowButtonText" class="ml-1">工具</span>
+                </div>
+                <div v-if="!isMobile" class="tooltip tooltip-top">
+                  启用Agent工具调用，支持联网搜索、知识库查询等
+                </div>
+              </div>
+
               <div v-if="shouldShowMermaidTool" class="group relative">
                 <div
                   class="btn-pill btn-md mx-1"
@@ -1624,6 +1709,62 @@ const shouldShowButtonText = computed(() => {
                 </div>
                 <div v-if="!isMobile" class="tooltip tooltip-top">
                   启用图表功能，支持Mermaid图表绘制
+                </div>
+              </div>
+
+              <!-- 知识库选择器 -->
+              <div class="group relative">
+                <div
+                  class="btn-pill btn-md mx-1"
+                  :class="[chatStore.knowledgeBaseId ? 'btn-pill-active' : '']"
+                  @click="showKbSelector = !showKbSelector"
+                  role="button"
+                  aria-label="选择知识库"
+                  tabindex="0"
+                >
+                  <Book size="15" />
+                  <span v-if="shouldShowButtonText" class="ml-1 truncate max-w-[80px]">
+                    {{ selectedKb ? selectedKb.name : '知识库' }}
+                  </span>
+                </div>
+                <div v-if="!isMobile" class="tooltip tooltip-top">
+                  {{
+                    chatStore.knowledgeBaseId ? `已选择: ${selectedKb?.name}` : '选择知识库进行检索'
+                  }}
+                </div>
+
+                <!-- 知识库下拉列表 -->
+                <div
+                  v-if="showKbSelector"
+                  class="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50 py-1"
+                >
+                  <div
+                    v-if="kbList.length === 0"
+                    class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                  >
+                    暂无知识库
+                  </div>
+                  <div
+                    v-for="kb in kbList"
+                    :key="kb.id"
+                    @click="selectKnowledgeBase(kb)"
+                    class="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
+                    :class="[
+                      chatStore.knowledgeBaseId === kb.id
+                        ? 'text-primary-600 dark:text-primary-400 bg-gray-50 dark:bg-gray-700'
+                        : 'text-gray-700 dark:text-gray-300',
+                    ]"
+                  >
+                    <span class="truncate">{{ kb.name }}</span>
+                    <span v-if="chatStore.knowledgeBaseId === kb.id" class="text-xs">✓</span>
+                  </div>
+                  <div
+                    v-if="chatStore.knowledgeBaseId"
+                    @click="clearKnowledgeBase"
+                    class="border-t border-gray-200 dark:border-gray-700 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-red-500 dark:text-red-400"
+                  >
+                    取消选择
+                  </div>
                 </div>
               </div>
             </div>

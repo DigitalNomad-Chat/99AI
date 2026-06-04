@@ -58,6 +58,7 @@ declare namespace Chat {
     usingNetwork: boolean
     usingDeepThinking: boolean
     usingMcpTool: boolean
+    knowledgeBaseId?: number
     reasoningText: string
     history?: History[]
     baseConfig: any
@@ -127,6 +128,7 @@ declare namespace Chat {
     chatId?: number
     taskId?: string
     imageUrl?: string
+    knowledgeBaseId?: number
   }
 
   interface SearchAppsResponse {}

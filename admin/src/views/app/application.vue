@@ -168,7 +168,7 @@ meta:
         saveDraft();
       }
     },
-    { deep: true }
+    { deep: true },
   );
 
   // 监听 specialModelType 变化保存草稿
@@ -206,10 +206,7 @@ meta:
 
   // 工作流配置是否完整（仅需要API地址和Key）
   const isWorkflowConfigComplete = computed(() => {
-    return (
-      formPackage.workflowApiUrl &&
-      formPackage.workflowApiKey
-    );
+    return formPackage.workflowApiUrl && formPackage.workflowApiKey;
   });
 
   // 测试工作流连接
@@ -236,36 +233,43 @@ meta:
     console.log('请求方法:', 'POST');
     console.log('请求数据:', {
       ...requestData,
-      workflowApiKey: requestData.workflowApiKey ?
-        `${requestData.workflowApiKey.substring(0, 6)}...${requestData.workflowApiKey.substring(requestData.workflowApiKey.length - 4)}` :
-        '***'
-      });
+      workflowApiKey: requestData.workflowApiKey
+        ? `${requestData.workflowApiKey.substring(0, 6)}...${requestData.workflowApiKey.substring(requestData.workflowApiKey.length - 4)}`
+        : '***',
+    });
     console.log('=====================================');
 
     try {
       const result = await api.post('/workflow/test', requestData);
 
       // ========== 浏览器控制台日志：响应后 ==========
-      console.log('%c========== 工作流测试响应收到 ==========', 'color: #67c23a; font-weight: bold');
+      console.log(
+        '%c========== 工作流测试响应收到 ==========',
+        'color: #67c23a; font-weight: bold',
+      );
       console.log('完整响应:', result);
-      console.log('响应码:', result.code);
-      console.log('响应消息:', result.message);
-      console.log('响应数据:', result.data);
+      const resData = result.data || {};
+      console.log('响应码:', resData.code);
+      console.log('响应消息:', resData.message);
+      console.log('响应数据:', resData.data);
       console.log('=====================================');
 
       workflowTestResult.value = {
-        success: result.code === 200,
-        message: result.message || '测试完成',
+        success: resData.code === 200,
+        message: resData.message || '测试完成',
       };
 
-      if (result.code === 200) {
+      if (resData.code === 200) {
         ElMessage.success('工作流连接测试成功');
       } else {
         ElMessage.error('工作流连接测试失败');
       }
     } catch (error: any) {
       // ========== 浏览器控制台日志：错误 ==========
-      console.log('%c========== 工作流测试请求失败 ==========', 'color: #f56c6c; font-weight: bold');
+      console.log(
+        '%c========== 工作流测试请求失败 ==========',
+        'color: #f56c6c; font-weight: bold',
+      );
       console.error('错误对象:', error);
       console.error('错误响应:', error.response);
       console.error('错误消息:', error.message);
@@ -458,7 +462,8 @@ meta:
             if (field.title === undefined) field.title = '';
             if (field.placeholder === undefined) field.placeholder = '';
             if (field.type === 'select' && !field.options) field.options = [];
-            if (field.isVariable === undefined) field.isVariable = field.type !== 'file' && field.type !== 'image';
+            if (field.isVariable === undefined)
+              field.isVariable = field.type !== 'file' && field.type !== 'image';
             if (field.required === undefined) field.required = false;
             if (field.variableName === undefined) field.variableName = '';
           });
@@ -503,7 +508,10 @@ meta:
 
     // 检测草稿
     const draft = getDraft();
-    if (draft && (draft.formPackage.name || draft.formPackage.des || draft.formPackage.catId.length > 0)) {
+    if (
+      draft &&
+      (draft.formPackage.name || draft.formPackage.des || draft.formPackage.catId.length > 0)
+    ) {
       draftData.value = draft;
       showDraftRestoreDialog.value = true;
       return; // 等待用户选择是否恢复草稿
@@ -737,14 +745,15 @@ meta:
         // --- 新增：模板字段完整性校验 ---
         if (usePromptTemplate.value === 'template') {
           // 检查是否有不完整的字段
-          const incompleteFields = templateFields.value
-            .filter(field => {
-              // 系统字段（如 FastGPT 的用户提示词）不需要校验，因为它们已经有默认值
-              if (field.systemType === 'userPrompt') return false;
+          const incompleteFields = templateFields.value.filter((field) => {
+            // 系统字段（如 FastGPT 的用户提示词）不需要校验，因为它们已经有默认值
+            if (field.systemType === 'userPrompt') return false;
 
-              // 检查字段名称和提示文字是否填写
-              return !field.title || !field.title.trim() || !field.placeholder || !field.placeholder.trim();
-            });
+            // 检查字段名称和提示文字是否填写
+            return (
+              !field.title || !field.title.trim() || !field.placeholder || !field.placeholder.trim()
+            );
+          });
 
           if (incompleteFields.length > 0) {
             ElMessage({
@@ -757,9 +766,10 @@ meta:
 
           // 下拉框选项校验
           const invalidSelectFields = templateFields.value
-            .filter(field => field.type === 'select')
-            .filter(field => {
-              const hasValidOptions = field.options && field.options.some(opt => opt && opt.trim());
+            .filter((field) => field.type === 'select')
+            .filter((field) => {
+              const hasValidOptions =
+                field.options && field.options.some((opt) => opt && opt.trim());
               return !hasValidOptions;
             });
 
@@ -773,17 +783,16 @@ meta:
           }
 
           // 变量名校验：当开启"作为工作流变量"时，变量名为必填
-          const missingVariableNameFields = templateFields.value
-            .filter(field => {
-              // 系统字段不需要校验变量名
-              if (field.systemType === 'userPrompt') return false;
+          const missingVariableNameFields = templateFields.value.filter((field) => {
+            // 系统字段不需要校验变量名
+            if (field.systemType === 'userPrompt') return false;
 
-              // 文件和图片类型不支持作为变量
-              if (field.type === 'file' || field.type === 'image') return false;
+            // 文件和图片类型不支持作为变量
+            if (field.type === 'file' || field.type === 'image') return false;
 
-              // 当开启"作为工作流变量"时，检查变量名是否填写
-              return field.isVariable && (!field.variableName || !field.variableName.trim());
-            });
+            // 当开启"作为工作流变量"时，检查变量名是否填写
+            return field.isVariable && (!field.variableName || !field.variableName.trim());
+          });
 
           if (missingVariableNameFields.length > 0) {
             ElMessage({
@@ -1082,7 +1091,7 @@ meta:
   // --- 结束：监听模板模式切换 ---
 
   // --- 监听特殊模型类型变化，弹出确认对话框 ---
-  let isUpdatingModeInternally = false;  // 防止无限循环的标志位
+  let isUpdatingModeInternally = false; // 防止无限循环的标志位
 
   watch(
     specialModelType,
@@ -1105,7 +1114,7 @@ meta:
       }
 
       // 初始化时跳过
-      if (!oldValue || oldValue === 'none' && !newValue) return;
+      if (!oldValue || (oldValue === 'none' && !newValue)) return;
 
       // 模式确实发生变化
       if (newValue !== oldValue) {
@@ -1121,7 +1130,7 @@ meta:
         });
       }
     },
-    { flush: 'sync' } // 同步执行，确保在设置值时立即触发 watch
+    { flush: 'sync' }, // 同步执行，确保在设置值时立即触发 watch
   );
 
   // 确认切换模式
@@ -1136,16 +1145,18 @@ meta:
     // 根据新模式生成默认模板
     if (newMode === 'fastgpt') {
       // FastGPT：自动添加锁定的"用户提示词"字段
-      templateFields.value = [{
-        id: uuidv4(),
-        type: 'input',
-        title: '用户提示词',
-        placeholder: '用户将在聊天框中输入问题，此字段仅用于提示',
-        isVariable: false,
-        variableName: '',
-        required: true,
-        systemType: 'userPrompt',  // 标识为系统字段
-      }];
+      templateFields.value = [
+        {
+          id: uuidv4(),
+          type: 'input',
+          title: '用户提示词',
+          placeholder: '用户将在聊天框中输入问题，此字段仅用于提示',
+          isVariable: false,
+          variableName: '',
+          required: true,
+          systemType: 'userPrompt', // 标识为系统字段
+        },
+      ];
       // FastGPT 模式强制使用模板模式
       usePromptTemplate.value = 'template';
       ElMessage.success('已切换到 FastGPT 工作流模式');
@@ -1175,10 +1186,10 @@ meta:
   // 获取模式类型名称
   function getModeTypeName(mode: string): string {
     const names: Record<string, string> = {
-      'none': '不使用',
-      'gpts': 'GPTs',
-      'fastgpt': 'FastGPT 工作流',
-      'flowith': 'Flowith',
+      none: '不使用',
+      gpts: 'GPTs',
+      fastgpt: 'FastGPT 工作流',
+      flowith: 'Flowith',
     };
     return names[mode] || mode;
   }
@@ -1274,7 +1285,14 @@ meta:
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
+      <el-table
+        v-loading="loading"
+        border
+        :data="tableData"
+        style="width: 100%"
+        size="default"
+        class="mt-4"
+      >
         <el-table-column prop="coverImg" label="应用封面" width="100">
           <template #default="scope">
             <el-image style="height: 50px" :src="scope.row.coverImg" fit="fill" />
@@ -1585,7 +1603,11 @@ meta:
               >
                 {{ testingWorkflow ? '测试中...' : '测试连接' }}
               </el-button>
-              <span v-if="workflowTestResult" :class="workflowTestResult.success ? 'text-success' : 'text-danger'" style="margin-left: 10px">
+              <span
+                v-if="workflowTestResult"
+                :class="workflowTestResult.success ? 'text-success' : 'text-danger'"
+                style="margin-left: 10px"
+              >
                 {{ workflowTestResult.message }}
               </span>
             </el-form-item>
@@ -1708,10 +1730,7 @@ meta:
                   class="border rounded p-3 bg-gray-50"
                   style="min-height: 150px"
                 >
-                  <PromptTemplateEditor
-                    v-model="templateFields"
-                    :appType="formPackage.appType"
-                  />
+                  <PromptTemplateEditor v-model="templateFields" :appType="formPackage.appType" />
                 </div>
               </div>
             </el-form-item>
@@ -1748,7 +1767,8 @@ meta:
             <strong>分类数量：</strong>{{ draftData?.formPackage.catId.length }} 个
           </li>
           <li>
-            <strong>保存时间：</strong>{{ draftData ? new Date(draftData.timestamp).toLocaleString() : '' }}
+            <strong>保存时间：</strong
+            >{{ draftData ? new Date(draftData.timestamp).toLocaleString() : '' }}
           </li>
         </ul>
         <p class="draft-restore-hint">您希望恢复此草稿吗？</p>
@@ -1783,9 +1803,7 @@ meta:
       <template #footer>
         <div class="flex justify-center gap-4">
           <el-button @click="cancelModeSwitch">取消</el-button>
-          <el-button type="danger" @click="confirmModeSwitch">
-            确认切换
-          </el-button>
+          <el-button type="danger" @click="confirmModeSwitch"> 确认切换 </el-button>
         </div>
       </template>
     </el-dialog>

@@ -476,6 +476,7 @@ const onConversation = async ({
     fileParsing: fileParsing.value,
     usingNetwork: chatStore.usingNetwork,
     usingDeepThinking: chatStore.usingDeepThinking,
+    knowledgeBaseId: chatStore.knowledgeBaseId,
   }
 
   /* 虚拟增加一条ai记录 */

@@ -24,6 +24,10 @@ import { BalanceEntity } from '../userBalance/balance.entity';
 import { FingerprintLogEntity } from '../userBalance/fingerprint.entity';
 import { UserBalanceEntity } from '../userBalance/userBalance.entity';
 import { VerificationEntity } from '../verification/verification.entity';
+import { KnowledgeBaseEntity } from '../knowledge-base/entities/knowledge-base.entity';
+import { KbFileEntity } from '../knowledge-base/entities/kb-file.entity';
+import { KbChunkEntity } from '../knowledge-base/entities/kb-chunk.entity';
+import { AgentSessionEntity } from '../agent/entities/agent-session.entity';
 
 loadEnv();
 
@@ -57,6 +61,10 @@ const dataSourceOptions: DataSourceOptions = {
     AppCatsEntity,
     AppEntity,
     OrderEntity,
+    KnowledgeBaseEntity,
+    KbFileEntity,
+    KbChunkEntity,
+    AgentSessionEntity,
   ],
   synchronize: false, // 禁用自动同步，改为根据情况动态开启
   charset: 'utf8mb4',
@@ -226,6 +234,64 @@ async function runAllMigrations() {
         Logger.log(`迁移chatlog表${column}列时跳过: ${error.message}`, 'Database');
       }
     }
+
+    // 4. 初始化默认嵌入模型
+    try {
+      const [existing] = (await conn.execute(
+        `SELECT id FROM models WHERE model = 'text-embedding-ada-002' LIMIT 1`,
+      )) as mysql.RowDataPacket[][];
+
+      if (existing.length === 0) {
+        await conn.execute(
+          `INSERT INTO models (
+            keyType, modelName, model, modelOrder,
+            maxModelTokens, max_tokens, maxRounds, timeout, deduct,
+            deductDeepThink, deductType, isTokenBased, isFileUpload,
+            isImageUpload, tokenFeeRatio, remark, key, status,
+            useCount, useToken, proxyUrl, modelLimits, modelDescription,
+            isNetworkSearch, deepThinkingType, isMcpTool, systemPrompt,
+            systemPromptType, drawingType, is_api_available
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            1,
+            'Text Embedding Ada 002',
+            'text-embedding-ada-002',
+            99,
+            64000,
+            4096,
+            12,
+            300,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            0,
+            '默认嵌入模型，用于知识库文本向量化',
+            '',
+            1,
+            0,
+            0,
+            'https://api2.aigcbest.top/',
+            999,
+            'OpenAI text-embedding-ada-002，1536维向量',
+            1,
+            0,
+            0,
+            '',
+            0,
+            0,
+            0,
+          ],
+        );
+        Logger.log('已插入默认嵌入模型 (text-embedding-ada-002)', 'Database');
+      } else {
+        Logger.log('嵌入模型已存在，跳过初始化', 'Database');
+      }
+    } catch (error) {
+      Logger.log(`初始化嵌入模型时跳过: ${error.message}`, 'Database');
+    }
   } finally {
     await conn.end();
   }
@@ -242,22 +308,24 @@ export async function initDatabase() {
     Logger.log('数据迁移操作完成', 'Database');
 
     // =========================================================================
-    // 智能同步策略：检测数据库是否为空
+    // 智能同步策略：检测数据库是否为空或缺失新表
     // =========================================================================
     //
     // 【策略说明】
     // - 全新数据库：启用同步创建表结构
-    // - 已有数据：禁用同步保护历史数据
+    // - 已有数据但缺失新模块表：启用同步仅创建新表
+    // - 已有数据且表完整：禁用同步保护历史数据
     //
     // 【风险控制】
-    // - 只在检测到数据库为空时启用同步
+    // - 只在检测到数据库为空或缺失新表时启用同步
     // - 同步完成后立即禁用
     // - synchronize 只能创建表和字段，不能删除数据
     //
     // =========================================================================
 
-    // 检查数据库是否为空（是否有表存在）
+    const NEW_TABLES = ['knowledge_bases', 'kb_files', 'kb_chunks', 'agent_sessions'];
     let useSynchronize = false;
+    let missingTables: string[] = [];
     const checkConn = await mysql.createConnection({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
@@ -276,13 +344,32 @@ export async function initDatabase() {
       const tableCount = tables[0]?.count || 0;
       Logger.log(`当前数据库表数量: ${tableCount}`, 'Database');
 
-      // 如果数据库为空（没有表），启用同步
       if (tableCount === 0) {
         Logger.warn('检测到空数据库，启用 TypeORM 同步以创建表结构', 'Database');
         useSynchronize = true;
       } else {
-        Logger.log('数据库已存在表，禁用 TypeORM 同步以保护历史数据', 'Database');
-        useSynchronize = false;
+        // 检查是否有新表缺失
+        for (const tableName of NEW_TABLES) {
+          const [exists] = (await checkConn.execute(
+            `SELECT COUNT(*) as count FROM information_schema.tables
+             WHERE table_schema = ? AND table_name = ?`,
+            [process.env.DB_DATABASE, tableName],
+          )) as mysql.RowDataPacket[];
+          if (!exists[0]?.count) {
+            missingTables.push(tableName);
+          }
+        }
+
+        if (missingTables.length > 0) {
+          Logger.warn(
+            `检测到缺失新表: ${missingTables.join(', ')}，启用 TypeORM 同步以创建`,
+            'Database',
+          );
+          useSynchronize = true;
+        } else {
+          Logger.log('数据库表结构完整，禁用 TypeORM 同步以保护历史数据', 'Database');
+          useSynchronize = false;
+        }
       }
     } catch (error) {
       Logger.warn(`检查数据库状态失败: ${error.message}，默认禁用同步`, 'Database');

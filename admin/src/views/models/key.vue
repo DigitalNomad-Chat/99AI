@@ -577,7 +577,14 @@ meta:
         </el-form-item>
       </el-form>
 
-      <el-table v-loading="loading" border :data="tableData" style="width: 100%" size="default" class="mt-4">
+      <el-table
+        v-loading="loading"
+        border
+        :data="tableData"
+        style="width: 100%"
+        size="default"
+        class="mt-4"
+      >
         <el-table-column prop="keyType" label="模型类型" width="120">
           <template #default="scope">
             <el-tag type="success">
@@ -613,6 +620,13 @@ meta:
           <template #default="scope">
             <el-tag :type="scope.row.isTokenBased ? 'success' : 'danger'">
               {{ scope.row.isTokenBased ? '是' : '否' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="isMcpTool" align="center" label="MCP工具" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.isMcpTool ? 'success' : 'danger'">
+              {{ scope.row.isMcpTool ? '支持' : '不支持' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -659,7 +673,7 @@ meta:
 
         <el-table-column prop="proxyUrl" align="center" label="绑定的代理地址" width="140">
           <template #default="scope">
-            <span style="word-break: break-all;">{{ scope.row.proxyUrl || '-' }}</span>
+            <span style="word-break: break-all">{{ scope.row.proxyUrl || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" align="center" label="添加时间" width="120">
@@ -669,10 +683,7 @@ meta:
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="220" align="center">
           <template #default="scope">
-            <el-button
-              @click="handleEditKey(scope.row)"
-              class="action-btn action-btn-primary"
-            >
+            <el-button @click="handleEditKey(scope.row)" class="action-btn action-btn-primary">
               变更
             </el-button>
             <el-popconfirm
@@ -682,9 +693,7 @@ meta:
               @confirm="handleDeleteKey(scope.row)"
             >
               <template #reference>
-                <el-button class="action-btn action-btn-danger">
-                  删除秘钥
-                </el-button>
+                <el-button class="action-btn action-btn-danger"> 删除秘钥 </el-button>
               </template>
             </el-popconfirm>
           </template>
@@ -995,6 +1004,25 @@ meta:
           <el-tooltip class="box-item" effect="dark" placement="right">
             <template #content>
               <div style="width: 250px">开启后模型将启用联网搜索功能，用户端将显示联网搜索按钮</div>
+            </template>
+            <el-icon class="ml-3 cursor-pointer">
+              <QuestionFilled />
+            </el-icon>
+          </el-tooltip>
+        </el-form-item>
+
+        <el-form-item
+          v-if="[1].includes(Number(formPackage.keyType))"
+          label="MCP工具调用"
+          prop="isMcpTool"
+        >
+          <el-switch v-model="formPackage.isMcpTool" />
+          <el-tooltip class="box-item" effect="dark" placement="right">
+            <template #content>
+              <div style="width: 250px">
+                开启后模型将支持 Agent 工具调用（MCP），用户端将显示工具调用按钮。需要模型本身支持
+                function calling。
+              </div>
             </template>
             <el-icon class="ml-3 cursor-pointer">
               <QuestionFilled />

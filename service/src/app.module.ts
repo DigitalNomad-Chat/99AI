@@ -35,6 +35,8 @@ import { VerificationModule } from './modules/verification/verification.module';
 import { WorkflowModule } from './modules/workflow/workflow.module';
 import { ApiKeyModule } from './modules/apiKey/apiKey.module';
 import { OpenaiApiModule } from './modules/openaiApi/openaiApi.module';
+import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module';
+import { AgentModule } from './modules/agent/agent.module';
 // global.fetch = fetch; // Disable isomorphic-fetch polyfill
 
 @Global()
@@ -101,6 +103,8 @@ import { OpenaiApiModule } from './modules/openaiApi/openaiApi.module';
     WorkflowModule,
     ApiKeyModule,
     OpenaiApiModule,
+    KnowledgeBaseModule,
+    AgentModule,
   ],
   providers: [
     {
