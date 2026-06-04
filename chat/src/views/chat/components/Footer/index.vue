@@ -7,6 +7,7 @@ import {
   AddPicture,
   Book,
   FullScreen,
+  Brain,
   LoadingFour,
   OffScreen,
   Plus,
@@ -24,6 +25,7 @@ import { fetchKnowledgeBaseListAPI } from '@/api/knowledgeBase'
 import { message } from '@/utils/message'
 import { computed, inject, nextTick, onMounted, onUnmounted, Ref, ref, watch } from 'vue'
 import FilePreview from './components/FilePreview.vue'
+import VoiceButton from '../VoiceButton/index.vue'
 
 interface Emit {
   (ev: 'pause-request'): void
@@ -351,6 +353,8 @@ const activeModelAvatar = computed(() => {
 const createNewChatGroup = inject('createNewChatGroup', () =>
   Promise.resolve()
 ) as () => Promise<void>
+const toggleSkillSelector = inject('toggleSkillSelector', () => {}) as () => void
+const voiceButtonRef = ref<InstanceType<typeof VoiceButton> | null>(null)
 
 // 修改计算属性，直接从对话组获取fileUrl
 const fileUrl = computed(() => activeGroupInfo.value?.fileUrl || '')
@@ -1674,6 +1678,34 @@ const shouldShowButtonText = computed(() => {
                   <span v-if="shouldShowButtonText" class="ml-1">搜索</span>
                 </div>
                 <div v-if="!isMobile" class="tooltip tooltip-top">启用网络搜索，获取最新信息</div>
+              </div>
+
+              <div class="group relative">
+                <div
+                  class="btn-pill btn-md mx-1"
+                  role="button"
+                  aria-label="打开技能广场"
+                  tabindex="0"
+                  @click="toggleSkillSelector"
+                >
+                  <Brain size="15" />
+                  <span v-if="shouldShowButtonText" class="ml-1">技能</span>
+                </div>
+                <div v-if="!isMobile" class="tooltip tooltip-top">
+                  打开技能广场，选择并执行AI技能
+                </div>
+              </div>
+
+              <div class="group relative flex items-center">
+                <VoiceButton
+                  ref="voiceButtonRef"
+                  @input="
+                    text => {
+                      prompt = text
+                      handleInput()
+                    }
+                  "
+                />
               </div>
 
               <div v-if="shouldShowMcpTool" class="group relative">

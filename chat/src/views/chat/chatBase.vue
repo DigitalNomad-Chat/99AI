@@ -22,6 +22,7 @@ import { DropdownMenu } from '@/components/common/DropdownMenu'
 import AiBotComponent from './components/AiBot/index.vue'
 import AppList from './components/AppList/index.vue'
 import AppTips from './components/AppTips/index.vue'
+import SkillSelector from './components/SkillSelector/index.vue'
 import FooterComponent from './components/Footer/index.vue'
 import HeaderComponent from './components/Header/index.vue'
 import HtmlSidebar from '@/components/HtmlSidebar.vue'
@@ -69,6 +70,7 @@ const firstScroll = ref<boolean>(true)
 const controller = ref(new AbortController())
 const componentKey = ref(0)
 const showAppListComponent = ref(false)
+const showSkillSelector = ref(false)
 const currentAppDetail = ref<any>(null)
 
 // ============== 弹窗相关状态 ==============
@@ -1195,6 +1197,14 @@ const toggleAppList = () => {
   useGlobalStore.updateShowAppListComponent(!useGlobalStore.showAppListComponent)
 }
 
+// Toggle SkillSelector visibility
+const toggleSkillSelector = () => {
+  showSkillSelector.value = !showSkillSelector.value
+  if (showSkillSelector.value) {
+    useGlobalStore.updateShowAppListComponent(false)
+  }
+}
+
 // Toggle TextEditor visibility
 const toggleTextEditor = () => {
   useGlobalStore.updateTextEditor(!useGlobalStore.showTextEditor)
@@ -1263,6 +1273,14 @@ async function fetchCurrentAppDetail(appId: number) {
   }
 }
 
+// Handle skill execution result
+function handleRunSkill({ skill, result }: { skill: any; result: string }) {
+  showSkillSelector.value = false
+  if (result) {
+    onConversation({ msg: result })
+  }
+}
+
 // ============== 依赖注入 ==============
 provide('onConversation', onConversation)
 provide('handleRegenerate', handleRegenerate)
@@ -1270,7 +1288,7 @@ provide('handleRegenerate', handleRegenerate)
 // Potentially expose toggleAppList if needed by other children
 // defineExpose({ toggleAppList })
 // Expose the toggleAppList function
-defineExpose({ toggleAppList, toggleTextEditor })
+defineExpose({ toggleAppList, toggleTextEditor, toggleSkillSelector })
 
 // 打开图片预览器
 function openImagePreviewer(imageUrls: string[], initialIndex: number, mjData?: any) {
@@ -1284,6 +1302,7 @@ provide('onOpenImagePreviewer', openImagePreviewer)
 // 提供弹窗相关方法给子组件
 provide('showAppConfigModal', showAppConfigModal)
 provide('tryParseJson', tryParseJson)
+provide('toggleSkillSelector', toggleSkillSelector)
 </script>
 
 <template>
@@ -1329,6 +1348,13 @@ provide('tryParseJson', tryParseJson)
           @run-app="handleRunAppFromList"
           @show-member-dialog="handleShowMemberDialogFromList"
           @run-app-with-data="handleRunAppWithData"
+        />
+      </template>
+      <template v-else-if="showSkillSelector">
+        <SkillSelector
+          class="relative z-10 flex-1 overflow-hidden"
+          @close="showSkillSelector = false"
+          @run-skill="handleRunSkill"
         />
       </template>
       <template v-else>
