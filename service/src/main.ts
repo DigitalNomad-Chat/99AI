@@ -119,6 +119,18 @@ async function bootstrap() {
   app.getHttpAdapter().getInstance().set('views', 'templates/pages');
   app.getHttpAdapter().getInstance().set('view engine', 'hbs');
 
+  // 初始化内置技能
+  try {
+    Logger.log('正在初始化内置技能...', 'Bootstrap');
+    const builtInSkillsService = app.get(
+      require('./modules/skills/built-in-skills.service').BuiltInSkillsService,
+    );
+    await builtInSkillsService.initBuiltInSkills();
+    Logger.log('内置技能初始化完成', 'Bootstrap');
+  } catch (skillError) {
+    Logger.warn(`内置技能初始化失败: ${skillError.message}`, 'Bootstrap');
+  }
+
   // 只在测试环境下启用Swagger
   if (process.env.ISDEV === 'true') {
     const config = new DocumentBuilder()

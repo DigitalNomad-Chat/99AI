@@ -37,6 +37,11 @@ import { ApiKeyModule } from './modules/apiKey/apiKey.module';
 import { OpenaiApiModule } from './modules/openaiApi/openaiApi.module';
 import { KnowledgeBaseModule } from './modules/knowledge-base/knowledge-base.module';
 import { AgentModule } from './modules/agent/agent.module';
+import { SkillsModule } from './modules/skills/skills.module';
+import { AuditModule } from './modules/audit/audit.module';
+import { AuditInterceptor } from './modules/audit/audit.interceptor';
+import { VoiceModule } from './modules/voice/voice.module';
+import { BotModule } from './modules/bot/bot.module';
 // global.fetch = fetch; // Disable isomorphic-fetch polyfill
 
 @Global()
@@ -105,11 +110,19 @@ import { AgentModule } from './modules/agent/agent.module';
     OpenaiApiModule,
     KnowledgeBaseModule,
     AgentModule,
+    SkillsModule,
+    AuditModule,
+    VoiceModule,
+    BotModule,
   ],
   providers: [
     {
       provide: APP_INTERCEPTOR,
       useClass: AbortInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
     CustomLoggerService,
   ],

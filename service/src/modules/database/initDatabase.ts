@@ -29,6 +29,13 @@ import { KbFileEntity } from '../knowledge-base/entities/kb-file.entity';
 import { KbChunkEntity } from '../knowledge-base/entities/kb-chunk.entity';
 import { AgentSessionEntity } from '../agent/entities/agent-session.entity';
 import { AgentMemoryEntity } from '../agent/entities/agent-memory.entity';
+import { SkillEntity } from '../skills/entities/skill.entity';
+import { SkillCategoryEntity } from '../skills/entities/skill-category.entity';
+import { SkillExecutionEntity } from '../skills/entities/skill-execution.entity';
+import { AuditLogEntity } from '../audit/entities/audit-log.entity';
+import { VoiceLogEntity } from '../voice/entities/voice-log.entity';
+import { BotInstanceEntity } from '../bot/entities/bot-instance.entity';
+import { BotMessageEntity } from '../bot/entities/bot-message.entity';
 
 loadEnv();
 
@@ -67,6 +74,13 @@ const dataSourceOptions: DataSourceOptions = {
     KbChunkEntity,
     AgentSessionEntity,
     AgentMemoryEntity,
+    SkillEntity,
+    SkillCategoryEntity,
+    SkillExecutionEntity,
+    AuditLogEntity,
+    VoiceLogEntity,
+    BotInstanceEntity,
+    BotMessageEntity,
   ],
   synchronize: false, // 禁用自动同步，改为根据情况动态开启
   charset: 'utf8mb4',
@@ -331,6 +345,13 @@ export async function initDatabase() {
       'kb_chunks',
       'agent_sessions',
       'agent_memories',
+      'skill_categories',
+      'skills',
+      'skill_executions',
+      'audit_logs',
+      'voice_logs',
+      'bot_instances',
+      'bot_messages',
     ];
     let useSynchronize = false;
     let missingTables: string[] = [];
